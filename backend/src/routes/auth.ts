@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../app';
 import { AppError } from '../middleware/errorHandler';
-import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { authenticate, AuthenticatedRequest, authorize } from '../middleware/auth';
 import { loginSchema, registerSchema } from '../utils/validation';
 import { ApiResponse, JwtTokens, AuthPayload } from '../types';
 
@@ -238,6 +238,58 @@ router.post('/logout', authenticate, async (req: AuthenticatedRequest, res: Resp
     };
     
     res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Create admin user (admin only)
+router.post('/create-admin', authenticate, authorize(['ADMIN']), async (req: AuthenticatedRequest, res: Response, next): Promise<void> => {
+  try {
+    // Validate input
+    const { error, value } = registerSchema.validate(req.body);
+    if (error) {
+      throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');
+    }
+    
+    const { email, password } = value;
+    
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (existingUser) {
+      throw new AppError('User with this email already exists', 409, 'VALIDATION_ERROR');
+    }
+    
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+    
+    // Create admin user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        role: 'ADMIN',
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        isActive: true,
+      },
+    });
+    
+    // Send response
+    const response: ApiResponse = {
+      success: true,
+      data: { user },
+    };
+    
+    res.status(201).json(response);
   } catch (error) {
     next(error);
   }

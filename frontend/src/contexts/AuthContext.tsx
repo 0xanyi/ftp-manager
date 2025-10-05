@@ -6,6 +6,8 @@ interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, role?: string) => Promise<void>;
   logout: () => Promise<void>;
+  isAdmin: () => boolean;
+  isChannelUser: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -160,11 +162,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGOUT' });
   };
 
+  const isAdmin = (): boolean => {
+    return state.user?.role === 'ADMIN';
+  };
+
+  const isChannelUser = (): boolean => {
+    return state.user?.role === 'CHANNEL_USER';
+  };
+
   const value: AuthContextType = {
     ...state,
     login,
     register,
     logout,
+    isAdmin,
+    isChannelUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

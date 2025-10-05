@@ -15,7 +15,7 @@ export const registerSchema = Joi.object({
     .messages({
       'string.pattern.base': 'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
     }),
-  role: Joi.string().valid('admin', 'channel_user').default('channel_user'),
+  role: Joi.string().valid('ADMIN', 'CHANNEL_USER').default('CHANNEL_USER'),
 });
 
 // Channel validation schemas

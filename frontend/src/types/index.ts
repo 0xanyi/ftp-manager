@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'channel_user';
+  role: 'ADMIN' | 'CHANNEL_USER';
   channels: Channel[];
   createdAt: string;
   lastLoginAt?: string;
