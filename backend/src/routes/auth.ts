@@ -1,0 +1,259 @@
+import { Router, Response, Request } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { prisma } from '../app';
+import { AppError } from '../middleware/errorHandler';
+import { authenticate, AuthenticatedRequest } from '../middleware/auth';
+import { loginSchema, registerSchema } from '../utils/validation';
+import { ApiResponse, JwtTokens, AuthPayload } from '../types';
+
+const router = Router();
+
+// Register a new user
+router.post('/register', async (req: Request, res: Response, next): Promise<void> => {
+  try {
+    // Validate input
+    const { error, value } = registerSchema.validate(req.body);
+    if (error) {
+      throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');
+    }
+    
+    const { email, password, role } = value;
+    
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (existingUser) {
+      throw new AppError('User with this email already exists', 409, 'VALIDATION_ERROR');
+    }
+    
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+    
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        role,
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        isActive: true,
+      },
+    });
+    
+    // Generate tokens
+    const tokens = generateTokens(user);
+    
+    // Send response
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        user,
+        tokens,
+      },
+    };
+    
+    res.status(201).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Login user
+router.post('/login', async (req: Request, res: Response, next): Promise<void> => {
+  try {
+    // Validate input
+    const { error, value } = loginSchema.validate(req.body);
+    if (error) {
+      throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');
+    }
+    
+    const { email, password } = value;
+    
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (!user || !user.isActive) {
+      throw new AppError('Invalid email or password', 401, 'AUTHENTICATION_ERROR');
+    }
+    
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new AppError('Invalid email or password', 401, 'AUTHENTICATION_ERROR');
+    }
+    
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+    
+    // Get user's channels
+    const userChannels = await prisma.userChannel.findMany({
+      where: { userId: user.id },
+      include: {
+        channel: {
+          select: { id: true, slug: true, name: true },
+        },
+      },
+    });
+    
+    const channelIds = userChannels.map(uc => uc.channel.id);
+    
+    // Generate tokens
+    const tokens = generateTokens(user);
+    
+    // Prepare user data for response
+    const userData = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      channels: userChannels.map(uc => uc.channel),
+      createdAt: user.createdAt,
+      lastLoginAt: new Date(),
+    };
+    
+    // Send response
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        user: userData,
+        tokens,
+      },
+    };
+    
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Refresh token
+router.post('/refresh', async (req: Request, res: Response, next): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      throw new AppError('Refresh token required', 401, 'AUTHENTICATION_ERROR');
+    }
+    
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as { id: string };
+    
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+      },
+    });
+    
+    if (!user || !user.isActive) {
+      throw new AppError('Invalid refresh token', 401, 'AUTHENTICATION_ERROR');
+    }
+    
+    // Generate new tokens
+    const tokens = generateTokens(user);
+    
+    // Send response
+    const response: ApiResponse = {
+      success: true,
+      data: { tokens },
+    };
+    
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get current user
+router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response, next): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'AUTHENTICATION_ERROR');
+    }
+    
+    // Get user's channels
+    const userChannels = await prisma.userChannel.findMany({
+      where: { userId: req.user.id },
+      include: {
+        channel: {
+          select: { id: true, slug: true, name: true },
+        },
+      },
+    });
+    
+    // Prepare user data
+    const userData = {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+      channels: userChannels.map(uc => uc.channel),
+    };
+    
+    // Send response
+    const response: ApiResponse = {
+      success: true,
+      data: { user: userData },
+    };
+    
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Logout user
+router.post('/logout', authenticate, async (req: AuthenticatedRequest, res: Response, next): Promise<void> => {
+  try {
+    // In a real implementation, you would add the token to a blacklist
+    // For now, we'll just return a success response
+    
+    const response: ApiResponse = {
+      success: true,
+      data: { message: 'Logged out successfully' },
+    };
+    
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Helper function to generate JWT tokens
+function generateTokens(user: { id: string; email: string; role: string }): JwtTokens {
+  const payload: AuthPayload = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  };
+  
+  const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET!, {
+    expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
+  });
+  
+  const refreshToken = jwt.sign(
+    { id: user.id },
+    process.env.JWT_REFRESH_SECRET!,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+  );
+  
+  return { accessToken, refreshToken };
+}
+
+export default router;

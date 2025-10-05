@@ -1,210 +1,177 @@
-# FTP File Manager - Project Overview
+# FTP File Manager
 
-## Introduction
+A modern web-based FTP file management system with user authentication, channel-based file organization, and guest upload links.
 
-The FTP File Manager is a web-based application designed to enable content contributors to upload files to an FTP server without needing to install FTP client software. The system provides channel-based organization, allowing different content channels (like "love" or "jammy") to have their own dedicated folders on the FTP server.
+## Features
 
-## Key Features
-
-- **Web-based File Upload**: No FTP client required - users can upload files through a simple web interface
-- **Channel-based Organization**: Files are automatically organized into channel-specific folders
-- **Large File Support**: Handles files up to 5GB with chunked uploads and progress tracking
-- **User Management**: Admin interface for creating and managing channel user accounts
-- **Full File Management**: Upload, download, preview, and delete capabilities
-- **Real-time Progress Tracking**: WebSocket-based upload progress updates
-- **Responsive Design**: Works on desktop and mobile devices
-- **Admin Dashboard**: Comprehensive admin interface for system management
-
-## Technology Stack
-
-### Backend
-- **Node.js with Express.js**: Modern, lightweight server framework
-- **TypeScript**: Type-safe development
-- **PostgreSQL**: Robust relational database
-- **Prisma**: Modern ORM for database management
-- **Redis**: Caching and session storage
-- **basic-ftp**: FTP client library
-- **JWT & bcrypt**: Authentication and password security
-
-### Frontend
-- **React with TypeScript**: Modern component-based UI framework
-- **Vite**: Fast build tool and development server
-- **Tailwind CSS**: Utility-first CSS framework
-- **React Query**: Server state management
-- **React Dropzone**: Drag-and-drop file upload interface
-
-### Infrastructure
-- **Docker**: Containerized application
-- **Coolify**: Deployment platform
-- **Nginx**: Reverse proxy and static file serving
-
-## System Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend API   │    │   FTP Server    │
-│   (React)       │◄──►│   (Node.js)     │◄──►│   (Storage)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                       ┌─────────────────┐
-                       │  PostgreSQL DB  │
-                       │   (Metadata)    │
-                       └─────────────────┘
-```
+- User authentication with JWT tokens
+- Role-based access control (Admin, Channel User)
+- Channel-based file organization
+- Guest upload links with expiration and upload limits
+- Secure file uploads with validation
+- Modern, responsive UI built with React and Tailwind CSS
+- RESTful API built with Node.js, Express, and TypeScript
+- PostgreSQL database with Prisma ORM
+- Redis for session management
+- Docker support for easy deployment
 
 ## Project Structure
 
 ```
 ftp-manager/
-├── backend/                 # Node.js backend application
+├── backend/                 # Node.js/Express API
 │   ├── src/
-│   │   ├── controllers/     # API controllers
-│   │   ├── services/        # Business logic services
+│   │   ├── controllers/     # Route controllers
 │   │   ├── middleware/      # Express middleware
 │   │   ├── routes/          # API routes
-│   │   ├── models/          # Database models
-│   │   └── utils/           # Utility functions
-│   ├── prisma/              # Database schema and migrations
-│   ├── tests/               # Backend tests
-│   └── Dockerfile
-├── frontend/                # React frontend application
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── pages/           # Page components
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── services/        # API services
+│   │   ├── services/        # Business logic
+│   │   ├── types/           # TypeScript type definitions
 │   │   ├── utils/           # Utility functions
-│   │   └── styles/          # Style files
+│   │   ├── app.ts           # Express app configuration
+│   │   └── server.ts        # Server startup
+│   ├── prisma/              # Database schema and migrations
+│   ├── Dockerfile           # Docker configuration
+│   └── package.json         # Dependencies and scripts
+├── frontend/                # React frontend
+│   ├── src/
+│   │   ├── components/      # Reusable UI components
+│   │   ├── contexts/        # React contexts
+│   │   ├── pages/           # Page components
+│   │   ├── services/        # API services
+│   │   ├── types/           # TypeScript type definitions
+│   │   ├── utils/           # Utility functions
+│   │   ├── App.tsx          # Main app component
+│   │   └── main.tsx         # App entry point
 │   ├── public/              # Static assets
-│   └── Dockerfile
+│   ├── Dockerfile           # Docker configuration
+│   └── package.json         # Dependencies and scripts
 ├── docs/                    # Documentation
-├── scripts/                 # Utility scripts
-├── docker-compose.yml       # Development environment
-└── README.md
+├── docker-compose.yml       # Production Docker configuration
+├── docker-compose.dev.yml   # Development Docker configuration
+└── README.md                # This file
 ```
-
-## Documentation
-
-The following documentation files provide detailed information about the system design and implementation:
-
-1. **[architecture.md](./architecture.md)** - System architecture and technology stack
-2. **[database-schema.md](./database-schema.md)** - Database design and schema
-3. **[api-design.md](./api-design.md)** - API endpoints and authentication flow
-4. **[frontend-design.md](./frontend-design.md)** - Frontend interface design and user flow
-5. **[file-upload-design.md](./file-upload-design.md)** - Large file upload handling
-6. **[ftp-integration.md](./ftp-integration.md)** - FTP integration and file synchronization
-7. **[admin-interface-design.md](./admin-interface-design.md)** - Admin interface design
-8. **[security-design.md](./security-design.md)** - Security measures and access controls
-9. **[deployment-strategy.md](./deployment-strategy.md)** - Deployment and environment configuration
-10. **[implementation-roadmap.md](./implementation-roadmap.md)** - Implementation phases and timeline
-
-## User Roles
-
-### Channel Users
-- Can only access assigned channels
-- Can upload, download, preview, and delete files in their channels
-- Have no administrative privileges
-
-### Administrators
-- Can create and manage channels
-- Can create and manage user accounts
-- Can assign users to channels
-- Have full system access and configuration capabilities
-
-## File Upload Process
-
-1. **User Authentication**: Users log in with their credentials
-2. **Channel Selection**: Users select their assigned channel
-3. **File Upload**: Files are uploaded using chunked transfer for large files
-4. **Progress Tracking**: Real-time progress updates via WebSocket
-5. **FTP Transfer**: Files are transferred to the appropriate channel folder
-6. **Database Update**: File metadata is stored in the database
-
-## Security Features
-
-- JWT-based authentication with refresh tokens
-- Role-based access control (RBAC)
-- Input validation and sanitization
-- File type and size validation
-- Rate limiting for API endpoints
-- Secure FTP connection management
-- Audit logging for all actions
-- Security headers and HTTPS enforcement
-
-## Deployment
-
-The application is designed for deployment on Coolify with the following characteristics:
-
-- Containerized with Docker
-- No SSH access required for management
-- Automated CI/CD pipeline
-- Health checks and monitoring
-- Backup and recovery strategies
-- Environment-specific configurations
 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
 - Docker and Docker Compose
-- FTP server access
+- PostgreSQL (if not using Docker)
+- Redis (if not using Docker)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/ftp-manager.git
+   cd ftp-manager
+   ```
+
+2. Copy the environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Update the environment variables in `.env` with your configuration.
 
 ### Development Setup
 
-1. Clone the repository
-2. Copy `.env.example` to `.env.development` and configure
-3. Start development environment: `docker-compose -f docker-compose.dev.yml up -d`
-4. Install dependencies: `npm install` in both backend and frontend
-5. Run database migrations: `cd backend && npm run migrate`
-6. Start development servers: `npm run dev`
+1. Start the development database services:
+   ```bash
+   docker-compose -f docker-compose.dev.yml up -d
+   ```
 
-### Production Deployment
+2. Install backend dependencies:
+   ```bash
+   cd backend
+   npm install
+   ```
 
-1. Configure environment variables for production
-2. Build Docker images
-3. Deploy to Coolify using the provided configuration
-4. Run database migrations
-5. Configure SSL certificates
-6. Set up monitoring and backups
+3. Generate Prisma client and push database schema:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
 
-## Implementation Timeline
+4. Start the backend development server:
+   ```bash
+   npm run dev
+   ```
 
-The project is planned for implementation over 14 weeks in 7 phases:
+5. In a new terminal, install frontend dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
 
-1. **Weeks 1-2**: Foundation & Core Infrastructure
-2. **Weeks 3-4**: File Upload & FTP Integration
-3. **Weeks 5-6**: Channel Management & Frontend Foundation
-4. **Weeks 7-8**: File Management Interface
-5. **Weeks 9-10**: Admin Interface
-6. **Weeks 11-12**: Security & Performance Optimization
-7. **Weeks 13-14**: Deployment & Production Setup
+6. Start the frontend development server:
+   ```bash
+   npm run dev
+   ```
 
-See [implementation-roadmap.md](./implementation-roadmap.md) for detailed phase information.
+7. Open your browser and navigate to `http://localhost:5173`.
 
-## Support and Maintenance
+### Production Deployment with Docker
 
-Post-launch maintenance includes:
-- Regular security updates
-- Performance monitoring
-- Backup verification
-- Feature enhancements based on user feedback
-- Documentation updates
+1. Build and start all services:
+   ```bash
+   docker-compose up -d --build
+   ```
+
+2. The application will be available at `http://localhost`.
+
+## API Documentation
+
+The API documentation is available at `/api/docs` when running the backend server.
+
+## Environment Variables
+
+### Backend
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `JWT_ACCESS_SECRET`: Secret for signing access tokens
+- `JWT_REFRESH_SECRET`: Secret for signing refresh tokens
+- `FTP_HOST`: FTP server hostname
+- `FTP_PORT`: FTP server port
+- `FTP_USER`: FTP username
+- `FTP_PASSWORD`: FTP password
+
+### Frontend
+
+- `VITE_API_URL`: Backend API URL (default: `/api`)
+
+## Scripts
+
+### Backend
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run start`: Start production server
+- `npm run test`: Run tests
+- `npm run lint`: Run linter
+- `npm run prisma:generate`: Generate Prisma client
+- `npm run prisma:push`: Push database schema
+- `npm run prisma:migrate`: Run database migrations
+- `npm run prisma:studio`: Open Prisma Studio
+
+### Frontend
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run preview`: Preview production build
+- `npm run test`: Run tests
+- `npm run lint`: Run linter
 
 ## Contributing
 
-This project is designed to be maintained by a small development team with the following roles:
-- 1 Full-Stack Developer (Lead)
-- 1 Backend Developer
-- 1 Frontend Developer
-- 1 DevOps Engineer (part-time)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-[License information to be added]
-
----
-
-This FTP File Manager provides a robust, secure, and user-friendly solution for managing file uploads to an FTP server through a web interface, with comprehensive admin capabilities and channel-based organization.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

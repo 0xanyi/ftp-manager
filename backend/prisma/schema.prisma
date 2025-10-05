@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         Role     @default(CHANNEL_USER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  lastLoginAt  DateTime? @map("last_login_at")
+  isActive     Boolean  @default(true) @map("is_active")
+  
+  // Relations
+  uploadedFiles    File[]           @relation("UploadedFiles")
+  createdGuestLinks GuestUploadLink[] @relation("CreatedGuestLinks")
+  
+  @@map("users")
+}
+
+model Channel {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  ftpPath     String   @map("ftp_path") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  
+  // Relations
+  files            File[]           @relation("ChannelFiles")
+  guestUploadLinks GuestUploadLink[] @relation("GuestUploadLinks")
+  
+  @@map("channels")
+}
+
+model File {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  filename         String   @db.VarChar(255)
+  originalName     String   @map("original_name") @db.VarChar(255)
+  mimeType         String?  @map("mime_type") @db.VarChar(100)
+  size             BigInt
+  ftpPath          String   @map("ftp_path") @db.VarChar(500)
+  channelId        String   @map("channel_id") @db.Uuid
+  uploadedBy       String   @map("uploaded_by") @db.Uuid
+  uploadedByGuest  Boolean  @default(false) @map("uploaded_by_guest")
+  guestUploadLinkId String? @map("guest_upload_link_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  isActive         Boolean  @default(true) @map("is_active")
+  
+  // Relations
+  channel          Channel          @relation("ChannelFiles", fields: [channelId], references: [id], onDelete: Cascade)
+  uploader         User             @relation("UploadedFiles", fields: [uploadedBy], references: [id], onDelete: SetNull)
+  guestUploadLink  GuestUploadLink? @relation("GuestUploadFiles", fields: [guestUploadLinkId], references: [id], onDelete: SetNull)
+  
+  @@map("files")
+}
+
+model GuestUploadLink {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token        String    @unique @db.VarChar(255)
+  channelId    String?   @map("channel_id") @db.Uuid
+  channel      Channel?  @relation("GuestUploadLinks", fields: [channelId], references: [id], onDelete: Cascade)
+  guestFolder  String?   @map("guest_folder") @db.VarChar(255)
+  description  String?   @db.Text
+  expiresAt    DateTime? @map("expires_at")
+  maxUploads   Int?      @map("max_uploads")
+  uploadCount  Int       @default(0) @map("upload_count")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdBy    String?   @map("created_by") @db.Uuid
+  creator      User?     @relation("CreatedGuestLinks", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  files File[] @relation("GuestUploadFiles")
+  
+  @@map("guest_upload_links")
+}
+
+model UserChannel {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  channelId  String   @map("channel_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  assignedBy String?  @map("assigned_by") @db.Uuid
+  
+  @@unique([userId, channelId])
+  @@map("user_channels")
+}
+
+enum Role {
+  ADMIN
+  CHANNEL_USER
+}
