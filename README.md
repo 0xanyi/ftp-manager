@@ -1,6 +1,6 @@
-# FTP File Manager
+# ToovyDrop
 
-A modern web-based FTP file management system with user authentication, channel-based file organization, and guest upload links.
+A modern web-based file transfer platform with user authentication, channel-based file organization, and guest upload links.
 
 ## Features
 
@@ -18,7 +18,7 @@ A modern web-based FTP file management system with user authentication, channel-
 ## Project Structure
 
 ```
-ftp-manager/
+toovydrop/
 ├── backend/                 # Node.js/Express API
 │   ├── src/
 │   │   ├── controllers/     # Route controllers
@@ -64,8 +64,8 @@ ftp-manager/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/ftp-manager.git
-   cd ftp-manager
+   git clone https://github.com/yourusername/toovydrop.git
+   cd toovydrop
    ```
 
 2. Copy the environment file:
@@ -175,3 +175,9 @@ The API documentation is available at `/api/docs` when running the backend serve
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## About ToovyDrop
+
+ToovyDrop is part of the Toovy platform ecosystem, providing secure and efficient file transfer solutions for businesses and content creators. Built with modern web technologies and focusing on user experience, ToovyDrop simplifies the complexity of file management while maintaining enterprise-grade security.
+
+For more information about the Toovy platform, visit [toovy.com](https://toovy.com).

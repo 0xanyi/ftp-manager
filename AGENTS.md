@@ -1,6 +1,6 @@
-# FTP Manager
+# ToovyDrop
 
-Web-based FTP file management system with channel-based organization and role-based access control.
+Web-based file transfer platform with channel-based organization and role-based access control.
 
 ## Core Commands
 
@@ -156,4 +156,4 @@ Default admin credentials (after running create-admin):
 
 ---
 
-**This document serves as the complete development guide for all agents working on the FTP Manager project. All guidelines are mandatory unless explicitly marked as optional.**
+**This document serves as the complete development guide for all agents working on the ToovyDrop project. All guidelines are mandatory unless explicitly marked as optional.**

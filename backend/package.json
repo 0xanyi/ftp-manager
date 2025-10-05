@@ -1,7 +1,7 @@
 {
-  "name": "ftp-manager-backend",
+  "name": "toovydrop-backend",
   "version": "1.0.0",
-  "description": "Backend for FTP file management system",
+  "description": "Backend for ToovyDrop file transfer platform",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
