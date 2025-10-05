@@ -2,7 +2,7 @@ import { Server as WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../app';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 // Global declarations for Node.js environment
 declare const WebSocket: any;

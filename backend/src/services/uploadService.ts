@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { redis } from '../app';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 import { 
   validateFileType, 
   validateFileSize, 

@@ -1,5 +1,5 @@
 import { UploadService } from './uploadService';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 // Global declarations
 declare const setInterval: (callback: () => void, delay: number) => NodeJS.Timeout;

@@ -5,7 +5,7 @@ import { prisma } from '../app';
 import { FileService } from '../services/fileService';
 import { UploadService } from '../services/uploadService';
 import { websocketService } from '../services/websocketService';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 import Joi from 'joi';
 
 // Initialize services
