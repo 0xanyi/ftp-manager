@@ -43,14 +43,19 @@ export const authenticate = async (
     // Get user's channels
     const userChannels = await prisma.userChannel.findMany({
       where: { userId: user.id },
-      include: {
-        channel: {
-          select: { id: true, slug: true },
-        },
-      },
     });
     
-    const channelIds = userChannels.map(uc => uc.channel.id);
+    // Get channel details
+    const channels = await prisma.channel.findMany({
+      where: {
+        id: {
+          in: userChannels.map(uc => uc.channelId),
+        },
+      },
+      select: { id: true, slug: true },
+    });
+    
+    const channelIds = channels.map(c => c.id);
     
     // Attach user to request
     req.user = {

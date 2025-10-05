@@ -21,7 +21,7 @@ export const errorHandler = (
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   let statusCode = 500;
   let errorCode = ErrorCode.INTERNAL_ERROR;

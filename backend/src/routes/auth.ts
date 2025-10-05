@@ -102,14 +102,17 @@ router.post('/login', async (req: Request, res: Response, next): Promise<void> =
     // Get user's channels
     const userChannels = await prisma.userChannel.findMany({
       where: { userId: user.id },
-      include: {
-        channel: {
-          select: { id: true, slug: true, name: true },
-        },
-      },
     });
     
-    const channelIds = userChannels.map(uc => uc.channel.id);
+    // Get channel details
+    const channels = await prisma.channel.findMany({
+      where: {
+        id: {
+          in: userChannels.map(uc => uc.channelId),
+        },
+      },
+      select: { id: true, slug: true, name: true },
+    });
     
     // Generate tokens
     const tokens = generateTokens(user);
@@ -119,7 +122,7 @@ router.post('/login', async (req: Request, res: Response, next): Promise<void> =
       id: user.id,
       email: user.email,
       role: user.role,
-      channels: userChannels.map(uc => uc.channel),
+      channels: channels,
       createdAt: user.createdAt,
       lastLoginAt: new Date(),
     };
@@ -191,11 +194,16 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response,
     // Get user's channels
     const userChannels = await prisma.userChannel.findMany({
       where: { userId: req.user.id },
-      include: {
-        channel: {
-          select: { id: true, slug: true, name: true },
+    });
+    
+    // Get channel details
+    const channels = await prisma.channel.findMany({
+      where: {
+        id: {
+          in: userChannels.map(uc => uc.channelId),
         },
       },
+      select: { id: true, slug: true, name: true },
     });
     
     // Prepare user data
@@ -203,7 +211,7 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response,
       id: req.user.id,
       email: req.user.email,
       role: req.user.role,
-      channels: userChannels.map(uc => uc.channel),
+      channels: channels,
     };
     
     // Send response
@@ -245,12 +253,12 @@ function generateTokens(user: { id: string; email: string; role: string }): JwtT
   
   const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET!, {
     expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
-  });
+  } as jwt.SignOptions);
   
   const refreshToken = jwt.sign(
     { id: user.id },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' } as jwt.SignOptions
   );
   
   return { accessToken, refreshToken };
