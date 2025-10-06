@@ -79,7 +79,7 @@ export class FileService {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       throw new Error('Failed to download file');
     }
   }

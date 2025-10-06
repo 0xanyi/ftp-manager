@@ -48,6 +48,18 @@ export interface UploadSession {
 
 export class UploadService {
   private readonly tempDir: string;
+  private readonly maxConcurrentChunks = 3;
+  private readonly chunkQueue = new Map<string, Promise<void>>();
+  private readonly activeUploads = new Map<string, {
+    uploadId: string;
+    chunksProcessing: number;
+    queue: Array<{
+      chunkIndex: number;
+      chunkData: Buffer;
+      resolve: () => void;
+      reject: (error: Error) => void;
+    }>;
+  }>();
   private readonly uploadSessionTTL = 3600; // 1 hour in seconds
 
   constructor() {
@@ -125,9 +137,72 @@ export class UploadService {
   }
 
   /**
-   * Handles a chunk upload
+   * Handles a chunk upload with concurrency control
    */
   async uploadChunk(
+    buffer: Buffer,
+    uploadId: string,
+    chunkIndex: number,
+    totalChunks: number,
+    chunkSize: number,
+    totalSize: number,
+    _filename: string,
+    _mimeType: string,
+    _channelId: string,
+    _userId: string
+  ): Promise<ChunkUploadResponse> {
+    // Initialize upload tracking if not exists
+    if (!this.activeUploads.has(uploadId)) {
+      this.activeUploads.set(uploadId, {
+        uploadId,
+        chunksProcessing: 0,
+        queue: [],
+      });
+    }
+
+    const uploadTracking = this.activeUploads.get(uploadId)!;
+
+    return new Promise<ChunkUploadResponse>((resolve, reject) => {
+      // Add to queue
+      uploadTracking.queue.push({
+        chunkIndex,
+        chunkData: buffer,
+        resolve: () => this.processChunk(buffer, uploadId, chunkIndex, totalChunks, chunkSize, totalSize, _filename, _mimeType, _channelId, _userId).then(resolve).catch(reject),
+        reject,
+      });
+
+      // Process queue
+      this.processChunkQueue(uploadId);
+    });
+  }
+
+  /**
+   * Process chunk queue with concurrency limits
+   */
+  private async processChunkQueue(uploadId: string): Promise<void> {
+    const uploadTracking = this.activeUploads.get(uploadId);
+    if (!uploadTracking) return;
+
+    while (uploadTracking.queue.length > 0 && uploadTracking.chunksProcessing < this.maxConcurrentChunks) {
+      const chunkTask = uploadTracking.queue.shift();
+      if (!chunkTask) break;
+
+      uploadTracking.chunksProcessing++;
+      
+      // Process chunk asynchronously
+      chunkTask.resolve()
+        .finally(() => {
+          uploadTracking.chunksProcessing--;
+          // Process next chunk in queue
+          this.processChunkQueue(uploadId);
+        });
+    }
+  }
+
+  /**
+   * Process individual chunk
+   */
+  private async processChunk(
     buffer: Buffer,
     uploadId: string,
     chunkIndex: number,

@@ -18,6 +18,19 @@ export const registerSchema = Joi.object({
   role: Joi.string().valid('ADMIN', 'CHANNEL_USER').default('CHANNEL_USER'),
 });
 
+export const userUpdateSchema = Joi.object({
+  email: Joi.string().email().optional(),
+  password: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
+    }),
+  role: Joi.string().valid('ADMIN', 'CHANNEL_USER').optional(),
+  isActive: Joi.boolean().optional()
+});
+
 // Channel validation schemas
 export const createChannelSchema = Joi.object({
   name: Joi.string().min(1).max(100).required().trim(),

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Pause, Play, RotateCcw, FileText, Image, Film, Music, Archive } from 'lucide-react';
 import { uploadService } from '../services/uploadService';
@@ -20,7 +20,7 @@ interface FileUploadItemProps {
   onCancel?: () => void;
 }
 
-const FileUploadItem: React.FC<FileUploadItemProps> = ({
+const FileUploadItem: React.FC<FileUploadItemProps> = React.memo(({
   upload,
   onPause,
   onResume,
@@ -67,14 +67,20 @@ const FileUploadItem: React.FC<FileUploadItemProps> = ({
             <p className="text-sm font-medium text-gray-900 truncate">
               {upload.filename}
             </p>
-            <p className="text-xs text-gray-500">
-              {uploadService.formatFileSize(upload.loaded)} / {uploadService.formatFileSize(upload.total)}
-              {upload.estimatedTimeRemaining && upload.status === 'uploading' && (
-                <span className="ml-2">
-                  • {Math.round(upload.estimatedTimeRemaining / 1000)}s remaining
-                </span>
+            <div className="flex flex-col space-y-1">
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>{uploadService.formatFileSize(upload.loaded)} / {uploadService.formatFileSize(upload.total)}</span>
+                <span>{upload.percentage.toFixed(1)}%</span>
+              </div>
+              {upload.status === 'uploading' && (
+                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <span>Speed: {uploadService.formatFileSize(upload.speed || 0)}/s</span>
+                  {upload.estimatedTimeRemaining && (
+                    <span>• {Math.round(upload.estimatedTimeRemaining / 1000)}s</span>
+                  )}
+                </div>
               )}
-            </p>
+            </div>
           </div>
         </div>
 
@@ -121,17 +127,29 @@ const FileUploadItem: React.FC<FileUploadItemProps> = ({
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Enhanced Progress bar */}
       <div className="relative">
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div
-            className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(upload.status)}`}
+            className={`h-2 rounded-full transition-all duration-300 ${getProgressBarColor(upload.status)} relative overflow-hidden`}
             style={{ width: `${upload.percentage}%` }}
-          />
+          >
+            {/* Animated stripe effect for active uploads */}
+            {upload.status === 'uploading' && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
+            )}
+          </div>
         </div>
-        <span className={`text-xs font-medium ${getStatusColor(upload.status)}`}>
-          {upload.percentage.toFixed(1)}%
-        </span>
+        <div className="flex items-center justify-between mt-1">
+          <span className={`text-xs font-medium ${getStatusColor(upload.status)}`}>
+            {upload.percentage.toFixed(1)}%
+          </span>
+          {upload.status === 'uploading' && upload.speed && (
+            <span className="text-xs text-gray-500">
+              {uploadService.formatFileSize(upload.speed)}/s
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Error message */}
@@ -149,7 +167,7 @@ const FileUploadItem: React.FC<FileUploadItemProps> = ({
       )}
     </div>
   );
-};
+});
 
 const FileUpload: React.FC<FileUploadProps> = ({
   channelId,
@@ -223,10 +241,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
     setUploads(uploadService.getAllUploads());
   };
 
-  const activeUploads = uploads.filter(u => u.status === 'uploading' || u.status === 'pending');
-  const completedUploads = uploads.filter(u => u.status === 'completed');
-  const failedUploads = uploads.filter(u => u.status === 'error');
-  const pausedUploads = uploads.filter(u => u.status === 'paused');
+  const uploadStats = useMemo(() => ({
+    active: uploads.filter(u => u.status === 'uploading' || u.status === 'pending'),
+    completed: uploads.filter(u => u.status === 'completed'),
+    failed: uploads.filter(u => u.status === 'error'),
+    paused: uploads.filter(u => u.status === 'paused'),
+  }), [uploads]);
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -278,11 +298,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
       </div>
 
       {/* Upload statistics */}
-      {(activeUploads.length > 0 || completedUploads.length > 0 || failedUploads.length > 0) && (
+      {(uploadStats.active.length > 0 || uploadStats.completed.length > 0 || uploadStats.failed.length > 0) && (
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-gray-900">Upload Queue</h3>
-            {completedUploads.length > 0 && (
+            {uploadStats.completed.length > 0 && (
               <button
                 onClick={handleClearCompleted}
                 className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
@@ -293,35 +313,35 @@ const FileUpload: React.FC<FileUploadProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-4 text-sm">
-            {activeUploads.length > 0 && (
+            {uploadStats.active.length > 0 && (
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <span className="text-gray-600">
-                  {activeUploads.length} active
+                  {uploadStats.active.length} active
                 </span>
               </div>
             )}
-            {pausedUploads.length > 0 && (
+            {uploadStats.paused.length > 0 && (
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                 <span className="text-gray-600">
-                  {pausedUploads.length} paused
+                  {uploadStats.paused.length} paused
                 </span>
               </div>
             )}
-            {completedUploads.length > 0 && (
+            {uploadStats.completed.length > 0 && (
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-gray-600">
-                  {completedUploads.length} completed
+                  {uploadStats.completed.length} completed
                 </span>
               </div>
             )}
-            {failedUploads.length > 0 && (
+            {uploadStats.failed.length > 0 && (
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                 <span className="text-gray-600">
-                  {failedUploads.length} failed
+                  {uploadStats.failed.length} failed
                 </span>
               </div>
             )}

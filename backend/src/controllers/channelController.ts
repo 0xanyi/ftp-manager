@@ -394,3 +394,140 @@ export const getAvailableUsers = async (req: Request, res: Response): Promise<vo
     } as ApiResponse);
   }
 };
+
+/**
+ * Get channels with pagination and filtering for admin
+ */
+export const getAdminChannels = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      page = '1',
+      limit = '20',
+      search = '',
+      isActive = 'true',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+
+    // Build where clause
+    const where: any = {
+      isActive: isActive === 'true'
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search as string, mode: 'insensitive' } },
+        { slug: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } }
+      ];
+    }
+
+    // Build order by clause
+    const orderBy: any = {};
+    orderBy[sortBy as string] = sortOrder;
+
+    const result = await channelService.getAllChannels(pageNum, limitNum, where, orderBy);
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Get admin channels error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error'
+      }
+    } as ApiResponse);
+  }
+};
+
+/**
+ * Update channel's user assignments (Admin only)
+ */
+export const updateChannelUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userIds } = req.body;
+    const assignedBy = (req as { user?: { id: string } }).user?.id;
+
+    if (!Array.isArray(userIds)) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'userIds must be an array'
+        }
+      } as ApiResponse);
+      return;
+    }
+
+    if (!assignedBy) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'AUTHENTICATION_ERROR',
+          message: 'Authentication required'
+        }
+      } as ApiResponse);
+      return;
+    }
+
+    // Get current assignments
+    const currentAssignmentsResult = await channelService.getChannelUsers(id);
+    if (!currentAssignmentsResult.success) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Channel not found'
+        }
+      } as ApiResponse);
+      return;
+    }
+
+    const currentUserIds = currentAssignmentsResult.data?.users.map((user: any) => user.id) || [];
+
+    // Calculate additions and removals
+    const toAdd = userIds.filter((id: string) => !currentUserIds.includes(id));
+    const toRemove = currentUserIds.filter((id: string) => !userIds.includes(id));
+
+    // Remove old assignments
+    for (const userId of toRemove) {
+      await channelService.removeUserFromChannel(userId, id);
+    }
+
+    // Add new assignments
+    for (const userId of toAdd) {
+      await channelService.assignUserToChannel(userId, id, assignedBy);
+    }
+
+    // Get updated assignments
+    const updatedAssignments = await channelService.getChannelUsers(id);
+
+    const response = {
+      success: true,
+      data: {
+        message: 'User assignments updated successfully',
+        assignedUsers: updatedAssignments.data?.users || []
+      }
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('Update channel users error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error'
+      }
+    } as ApiResponse);
+  }
+};

@@ -4,9 +4,12 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../app';
 import logger from '../utils/logger';
 import { Server } from 'http';
+import { URL } from 'url';
 
-declare const setInterval: (callback: () => void, delay: number) => NodeJS.Timeout;
-declare const clearInterval: (intervalId: NodeJS.Timeout) => void;
+declare const setInterval: (callback: () => void, delay: number) => any;
+declare const clearInterval: (intervalId: any) => void;
+
+type Interval = any;
 
 export interface AuthenticatedWebSocket extends WebSocket {
   userId?: string;
@@ -15,7 +18,7 @@ export interface AuthenticatedWebSocket extends WebSocket {
 
 export interface WebSocketMessage {
   type: string;
-  data: any;
+  data: unknown;
   uploadId?: string;
   timestamp: number;
 }
@@ -23,7 +26,7 @@ export interface WebSocketMessage {
 export class WebSocketService {
   private wss: WebSocketServer | null = null;
   private clients: Map<string, Set<AuthenticatedWebSocket>> = new Map();
-  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private heartbeatInterval: Interval | null = null;
 
   /**
    * Initialize WebSocket server
@@ -85,7 +88,7 @@ export class WebSocketService {
   private async handleConnection(ws: AuthenticatedWebSocket, req: IncomingMessage): Promise<void> {
     try {
       const token = this.extractToken(req);
-      const decoded = jwt.verify(token!, process.env.JWT_ACCESS_SECRET!) as any;
+      const decoded = jwt.verify(token!, process.env.JWT_ACCESS_SECRET!) as { id: string; email: string; role: string };
       
       ws.userId = decoded.id;
       ws.isAlive = true;
@@ -226,7 +229,7 @@ export class WebSocketService {
   /**
    * Broadcast upload progress to user's clients
    */
-  broadcastUploadProgress(userId: string, uploadId: string, progress: any): void {
+  broadcastUploadProgress(userId: string, uploadId: string, progress: Record<string, unknown>): void {
     const userClients = this.clients.get(userId);
     if (!userClients) {
       return;
@@ -299,7 +302,7 @@ export class WebSocketService {
   /**
    * Broadcast file operation updates to user's clients
    */
-  broadcastFileOperation(userId: string, operation: string, data: any): void {
+  broadcastFileOperation(userId: string, operation: string, data: Record<string, unknown>): void {
     const userClients = this.clients.get(userId);
     if (!userClients) {
       return;

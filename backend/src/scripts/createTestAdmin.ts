@@ -38,8 +38,9 @@ async function createTestAdmin() {
     console.log(`Role: ${admin.role}`);
     console.log(`ID: ${admin.id}`);
 
-  } catch (error: any) {
-    console.error('❌ Error creating admin:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Error creating admin:', errorMessage);
   } finally {
     await prisma.$disconnect();
   }

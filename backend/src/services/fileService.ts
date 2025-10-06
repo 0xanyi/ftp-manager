@@ -7,12 +7,8 @@ import logger from '../utils/logger';
 import { validateDirectoryPath, sanitizeFilename } from '../utils/fileValidation';
 
 // Global declarations
+// eslint-disable-next-line no-undef
 declare const setTimeout: (callback: () => void, delay: number) => NodeJS.Timeout;
-declare global {
-  namespace NodeJS {
-    interface Timeout {}
-  }
-}
 
 export interface UploadProgress {
   uploadId: string;
@@ -215,7 +211,7 @@ export class FileService {
   /**
    * Deletes a file from FTP server and database
    */
-  async deleteFile(fileId: string, userId: string): Promise<void> {
+  async deleteFile(fileId: string, _userId: string): Promise<void> {
     try {
       // Get file information
       const file = await this.prisma.file.findUnique({

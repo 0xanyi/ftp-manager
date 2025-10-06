@@ -269,7 +269,6 @@ export const uploadChunk = async (req: AuthenticatedRequest, res: Response) => {
 export const getUploadProgress = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { uploadId } = req.params;
-    const userId = req.user!.id;
 
     const progress = await uploadService.getUploadProgress(uploadId);
     

@@ -10,10 +10,13 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import channelRoutes from './routes/channels';
 import fileRoutes from './routes/files';
+import adminRoutes from './routes/admin';
+import performanceRoutes from './routes/performance';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
+import { generalRateLimit, uploadRateLimit, authRateLimit, downloadRateLimit, adminRateLimit } from './middleware/rateLimiter';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +50,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request logging middleware
 app.use(requestLogger);
 
+// Apply general rate limiting to all API routes
+app.use('/api', generalRateLimit);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -56,11 +62,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
+// API routes with specific rate limiting
+app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/channels', channelRoutes);
-app.use('/api/files', fileRoutes);
+app.use('/api/files', uploadRateLimit, fileRoutes);
+app.use('/api/files/:fileId/download', downloadRateLimit);
+app.use('/api/admin', adminRateLimit, adminRoutes);
+app.use('/api/performance', performanceRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

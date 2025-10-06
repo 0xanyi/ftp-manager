@@ -11,6 +11,8 @@ import {
   removeUserFromChannel,
   getChannelUsers,
   getAvailableUsers,
+  getAdminChannels,
+  updateChannelUsers,
 } from '../controllers/channelController';
 import {
   createChannelSchema,
@@ -31,6 +33,7 @@ router.get('/:id', authenticate, validateParams(idParamsSchema), getChannelById)
 
 // Admin only routes
 router.post('/', authenticate, authorize(['ADMIN']), validateRequest(createChannelSchema), createChannel);
+router.get('/admin', authenticate, authorize(['ADMIN']), getAdminChannels);
 router.get('/', authenticate, authorize(['ADMIN']), validateQuery(paginationQuerySchema), getAllChannels);
 router.put('/:id', authenticate, authorize(['ADMIN']), validateParams(idParamsSchema), validateRequest(updateChannelSchema), updateChannel);
 router.delete('/:id', authenticate, authorize(['ADMIN']), validateParams(idParamsSchema), deleteChannel);
@@ -53,6 +56,7 @@ router.post(
 );
 
 router.get('/:channelId/users', authenticate, authorize(['ADMIN']), validateParams(channelIdParamsSchema), getChannelUsers);
+router.put('/:channelId/users', authenticate, authorize(['ADMIN']), validateParams(channelIdParamsSchema), updateChannelUsers);
 router.get('/:channelId/available-users', authenticate, authorize(['ADMIN']), validateParams(channelIdParamsSchema), getAvailableUsers);
 
 export default router;

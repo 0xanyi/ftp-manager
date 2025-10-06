@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ApiResponse, ErrorCode } from '../types';
 import { generateSlug } from '../utils/helpers';
+import CacheService from './cacheService';
 
 export class ChannelService {
   constructor(private prisma: PrismaClient) {}
@@ -65,13 +66,19 @@ export class ChannelService {
   /**
    * Get all channels (admin only)
    */
-  async getAllChannels(page: number = 1, limit: number = 20): Promise<ApiResponse<{ channels: import('@prisma/client').Channel[]; total: number; page: number; totalPages: number }>> {
+  async getAllChannels(
+    page: number = 1,
+    limit: number = 20,
+    where?: any,
+    orderBy?: any
+  ): Promise<ApiResponse<{ channels: import('@prisma/client').Channel[]; total: number; page: number; totalPages: number }>> {
     try {
       const skip = (page - 1) * limit;
 
       const [channels, total] = await Promise.all([
         this.prisma.channel.findMany({
-          where: { isActive: true },
+          where: where || { isActive: true },
+          orderBy: orderBy || { createdAt: 'desc' },
           include: {
             _count: {
               select: {
@@ -80,12 +87,11 @@ export class ChannelService {
               }
             }
           },
-          orderBy: { createdAt: 'desc' },
           skip,
           take: limit
         }),
         this.prisma.channel.count({
-          where: { isActive: true }
+          where: where || { isActive: true }
         })
       ]);
 
@@ -185,7 +191,7 @@ export class ChannelService {
   /**
    * Get channels accessible to a user
    */
-  async getUserChannels(userId: string): Promise<ApiResponse<{ channels: any[] }>> {
+  async getUserChannels(userId: string): Promise<ApiResponse<{ channels: unknown[] }>> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId }
@@ -201,26 +207,8 @@ export class ChannelService {
         };
       }
 
-      // Get user channel assignments
-      const userChannels = await this.prisma.userChannel.findMany({
-        where: { userId },
-        // @ts-ignore
-        include: {
-          channel: {
-            where: { isActive: true },
-            include: {
-              _count: {
-                select: {
-                  files: true,
-                  guestUploadLinks: true
-                }
-              }
-            }
-          }
-        }
-      });
-
-      const channels = userChannels.map(uc => uc.channel);
+      // Get user channel assignments with caching
+      const channels = await CacheService.getUserChannels(userId, this.prisma);
 
       return {
         success: true,
@@ -361,7 +349,7 @@ export class ChannelService {
     userId: string,
     channelId: string,
     assignedBy: string
-  ): Promise<ApiResponse<{ userChannel: any }>> {
+  ): Promise<ApiResponse<{ userChannel: unknown }>> {
     try {
       // Verify user and channel exist
       const [user, channel] = await Promise.all([
@@ -406,7 +394,8 @@ export class ChannelService {
         };
       }
 
-      const userChannel = await this.prisma.userChannel.create({
+      // Create the assignment
+      await this.prisma.userChannel.create({
         data: {
           userId,
           channelId,
@@ -419,7 +408,6 @@ export class ChannelService {
         where: { 
           userId_channelId: { userId, channelId }
         },
-        // @ts-ignore
         include: {
           user: {
             select: { id: true, email: true }
@@ -461,13 +449,13 @@ export class ChannelService {
    */
   async removeUserFromChannel(userId: string, channelId: string): Promise<ApiResponse<{ success: boolean }>> {
     try {
-      const userChannel = await this.prisma.userChannel.findUnique({
+      const existingAssignment = await this.prisma.userChannel.findUnique({
         where: {
           userId_channelId: { userId, channelId }
         }
       });
 
-      if (!userChannel) {
+      if (!existingAssignment) {
         return {
           success: false,
           error: {
@@ -502,11 +490,10 @@ export class ChannelService {
   /**
    * Get users assigned to a channel
    */
-  async getChannelUsers(channelId: string): Promise<ApiResponse<{ users: any[] }>> {
+  async getChannelUsers(channelId: string): Promise<ApiResponse<{ users: unknown[] }>> {
     try {
       const userChannels = await this.prisma.userChannel.findMany({
         where: { channelId },
-        // @ts-ignore
         include: {
           user: {
             select: { id: true, email: true, role: true, createdAt: true, lastLoginAt: true }
@@ -516,7 +503,7 @@ export class ChannelService {
       });
 
       const users = userChannels.map(uc => {
-        const user = uc.user as any;
+        const user = uc.user;
         return {
           ...user,
           assignedAt: uc.assignedAt
@@ -573,7 +560,7 @@ export class ChannelService {
   /**
    * Get available users for channel assignment
    */
-  async getAvailableUsers(channelId: string): Promise<ApiResponse<{ users: any[] }>> {
+  async getAvailableUsers(channelId: string): Promise<ApiResponse<{ users: unknown[] }>> {
     try {
       // Get all active users who are not assigned to this channel
       const assignedUserIds = await this.prisma.userChannel

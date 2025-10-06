@@ -19,11 +19,13 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
   lastLoginAt  DateTime? @map("last_login_at")
   isActive     Boolean  @default(true) @map("is_active")
-  
+
   // Relations
   uploadedFiles    File[]           @relation("UploadedFiles")
   createdGuestLinks GuestUploadLink[] @relation("CreatedGuestLinks")
-  
+  userChannels     UserChannel[]    @relation("UserChannels")
+  assignedChannels UserChannel[]    @relation("AssignedChannels")
+
   @@map("users")
 }
 
@@ -36,11 +38,12 @@ model Channel {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   isActive    Boolean  @default(true) @map("is_active")
-  
+
   // Relations
   files            File[]           @relation("ChannelFiles")
   guestUploadLinks GuestUploadLink[] @relation("GuestUploadLinks")
-  
+  userChannels     UserChannel[]    @relation("ChannelUsers")
+
   @@map("channels")
 }
 
@@ -95,7 +98,12 @@ model UserChannel {
   channelId  String   @map("channel_id") @db.Uuid
   assignedAt DateTime @default(now()) @map("assigned_at")
   assignedBy String?  @map("assigned_by") @db.Uuid
-  
+
+  // Relations
+  user    User    @relation("UserChannels", fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation("ChannelUsers", fields: [channelId], references: [id], onDelete: Cascade)
+  assigner User?   @relation("AssignedChannels", fields: [assignedBy], references: [id], onDelete: SetNull)
+
   @@unique([userId, channelId])
   @@map("user_channels")
 }

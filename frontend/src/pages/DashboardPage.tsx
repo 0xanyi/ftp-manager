@@ -5,10 +5,12 @@ import Button from '../components/Button';
 import FileUpload from '../components/FileUpload';
 import FileList from '../components/FileList';
 import FilePreviewModal from '../components/FilePreview';
-import { Upload, FolderOpen, Settings, LogOut } from 'lucide-react';
+import { Upload, FolderOpen, Settings, LogOut, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'upload' | 'files'>('upload');
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -70,6 +72,16 @@ const DashboardPage: React.FC = () => {
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                 {user?.role}
               </span>
+              {user?.role === 'ADMIN' && (
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate('/admin')}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              )}
               <Button variant="secondary" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
