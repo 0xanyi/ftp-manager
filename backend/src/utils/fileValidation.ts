@@ -69,15 +69,15 @@ export function validateFileType(mimeType: string, filename: string): FileValida
   const fileExtension = path.extname(filename).toLowerCase();
   
   // Check if MIME type is allowed
-  if (!ALLOWED_MIME_TYPES[mimeType]) {
+  if (!(mimeType in ALLOWED_MIME_TYPES)) {
     return {
       isValid: false,
       error: `File type ${mimeType} is not allowed`,
     };
   }
-  
+
   // Check if file extension matches the MIME type
-  const allowedExtensions = ALLOWED_MIME_TYPES[mimeType];
+  const allowedExtensions = ALLOWED_MIME_TYPES[mimeType as keyof typeof ALLOWED_MIME_TYPES];
   if (!allowedExtensions.includes(fileExtension)) {
     return {
       isValid: false,

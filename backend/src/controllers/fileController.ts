@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import { prisma } from '../app';
@@ -7,6 +7,7 @@ import { UploadService } from '../services/uploadService';
 import { websocketService } from '../services/websocketService';
 import logger from '../utils/logger';
 import Joi from 'joi';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 // Initialize services
 const fileService = new FileService(prisma);
@@ -55,7 +56,7 @@ const searchFilesSchema = Joi.object({
 /**
  * Initialize a new file upload session
  */
-export const initializeUpload = async (req: Request, res: Response) => {
+export const initializeUpload = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { error, value } = initializeUploadSchema.validate(req.body);
     if (error) {
@@ -132,7 +133,7 @@ export const initializeUpload = async (req: Request, res: Response) => {
 /**
  * Upload a file chunk
  */
-export const uploadChunk = async (req: Request, res: Response) => {
+export const uploadChunk = async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Validate request body
     const { error, value } = chunkUploadSchema.validate(req.body);
@@ -205,6 +206,7 @@ export const uploadChunk = async (req: Request, res: Response) => {
           filename: uploadData.filename,
           mimeType: uploadData.mimeType,
           size: uploadData.size,
+          totalBytes: uploadData.size,
           channelId: uploadData.channelId,
           uploadedBy: uploadData.uploadedBy,
           tempFilePath: uploadData.tempFilePath,
@@ -264,7 +266,7 @@ export const uploadChunk = async (req: Request, res: Response) => {
 /**
  * Get upload progress
  */
-export const getUploadProgress = async (req: Request, res: Response) => {
+export const getUploadProgress = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { uploadId } = req.params;
     const userId = req.user!.id;
@@ -294,7 +296,7 @@ export const getUploadProgress = async (req: Request, res: Response) => {
 /**
  * Cancel an upload
  */
-export const cancelUpload = async (req: Request, res: Response) => {
+export const cancelUpload = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { uploadId } = req.params;
 
@@ -318,7 +320,7 @@ export const cancelUpload = async (req: Request, res: Response) => {
 /**
  * List files in a channel
  */
-export const listFiles = async (req: Request, res: Response) => {
+export const listFiles = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { error, value } = listFilesSchema.validate(req.query);
     if (error) {
@@ -350,7 +352,7 @@ export const listFiles = async (req: Request, res: Response) => {
 /**
  * Search files in a channel
  */
-export const searchFiles = async (req: Request, res: Response) => {
+export const searchFiles = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { error, value } = searchFilesSchema.validate(req.query);
     if (error) {
@@ -382,7 +384,7 @@ export const searchFiles = async (req: Request, res: Response) => {
 /**
  * Download a file
  */
-export const downloadFile = async (req: Request, res: Response) => {
+export const downloadFile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { fileId } = req.params;
     const userId = req.user!.id;
@@ -419,7 +421,7 @@ export const downloadFile = async (req: Request, res: Response) => {
 /**
  * Delete a file
  */
-export const deleteFile = async (req: Request, res: Response) => {
+export const deleteFile = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { fileId } = req.params;
     const userId = req.user!.id;

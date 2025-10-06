@@ -1,12 +1,10 @@
-import { Server as WebSocketServer } from 'ws';
+import { Server as WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../app';
 import logger from '../utils/logger';
+import { Server } from 'http';
 
-// Global declarations for Node.js environment
-declare const WebSocket: any;
-declare const URL: any;
 declare const setInterval: (callback: () => void, delay: number) => NodeJS.Timeout;
 declare const clearInterval: (intervalId: NodeJS.Timeout) => void;
 
@@ -30,7 +28,7 @@ export class WebSocketService {
   /**
    * Initialize WebSocket server
    */
-  initialize(server: unknown): void {
+  initialize(server: Server): void {
     this.wss = new WebSocketServer({
       server,
       verifyClient: this.verifyClient.bind(this),
@@ -93,10 +91,13 @@ export class WebSocketService {
       ws.isAlive = true;
 
       // Add client to user's client set
-      if (!this.clients.has(ws.userId)) {
-        this.clients.set(ws.userId, new Set());
+      const userId = ws.userId;
+      if (userId && !this.clients.has(userId)) {
+        this.clients.set(userId, new Set());
       }
-      this.clients.get(ws.userId)!.add(ws);
+      if (userId) {
+        this.clients.get(userId)!.add(ws);
+      }
 
       // Set up event handlers
       ws.on('message', this.handleMessage.bind(this, ws));
@@ -329,14 +330,14 @@ export class WebSocketService {
 
       this.wss.clients.forEach((ws) => {
         const authenticatedWs = ws as AuthenticatedWebSocket;
-        
+
         if (!authenticatedWs.isAlive) {
-          authenticatedWs.terminate();
+          ws.terminate();
           return;
         }
 
         authenticatedWs.isAlive = false;
-        authenticatedWs.ping();
+        ws.ping();
       });
     }, 30000); // 30 seconds
   }

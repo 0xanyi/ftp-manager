@@ -1,4 +1,5 @@
-import fs from 'fs-extra';
+import fs from 'fs/promises';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { redis } from '../app';
@@ -59,7 +60,7 @@ export class UploadService {
    */
   private async ensureTempDirectory(): Promise<void> {
     try {
-      await fs.ensureDir(this.tempDir);
+      await fsExtra.ensureDir(this.tempDir);
       logger.info(`Temporary directory ensured: ${this.tempDir}`);
     } catch (error) {
       logger.error('Error creating temporary directory:', error);
@@ -166,11 +167,11 @@ export class UploadService {
       const chunkPosition = chunkIndex * CHUNK_SIZE;
       
       // Write chunk to temporary file
-      const fileDescriptor = await fs.open(session.tempFilePath, 'r+');
+      const fileHandle = await fs.open(session.tempFilePath, 'r+');
       try {
-        await fileDescriptor.write(buffer, 0, buffer.length, chunkPosition);
+        await fileHandle.write(buffer, 0, buffer.length, chunkPosition);
       } finally {
-        await fileDescriptor.close();
+        await fileHandle.close();
       }
 
       // Mark chunk as uploaded
@@ -305,8 +306,8 @@ export class UploadService {
 
     try {
       // Remove temporary file
-      if (await fs.pathExists(session.tempFilePath)) {
-        await fs.remove(session.tempFilePath);
+      if (await fsExtra.pathExists(session.tempFilePath)) {
+        await fsExtra.remove(session.tempFilePath);
         logger.info(`Removed temporary file: ${session.tempFilePath}`);
       }
     } catch (error) {
@@ -335,8 +336,8 @@ export class UploadService {
           if (session.expiresAt.getTime() < now) {
             // Clean up expired session
             try {
-              if (await fs.pathExists(session.tempFilePath)) {
-                await fs.remove(session.tempFilePath);
+              if (await fsExtra.pathExists(session.tempFilePath)) {
+                await fsExtra.remove(session.tempFilePath);
               }
             } catch (error) {
               logger.error(`Error removing expired temp file ${session.tempFilePath}:`, error);
@@ -365,7 +366,7 @@ export class UploadService {
       uploadedChunks: Array.from(session.uploadedChunks),
     };
     
-    await redis.setex(
+    await redis.setEx(
       `upload:${session.uploadId}`,
       this.uploadSessionTTL,
       JSON.stringify(sessionData)

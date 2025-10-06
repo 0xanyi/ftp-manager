@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../contexts/AuthContext';
-import Button from '../components/Button';
-import Input from '../components/Input';
+import { useAuth } from '../../contexts/AuthContext';
+import Button from '../Button';
+import Input from '../Input';
 import toast from 'react-hot-toast';
 
 interface RegistrationFormData {

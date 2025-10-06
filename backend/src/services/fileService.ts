@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import ftp from 'basic-ftp';
+import * as ftp from 'basic-ftp';
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -28,6 +28,7 @@ export interface FileUploadOptions {
   filename: string;
   mimeType: string;
   size: number;
+  totalBytes: number;
   channelId: string;
   uploadedBy: string;
   tempFilePath: string;
@@ -116,18 +117,8 @@ export class FileService {
       // Ensure directory exists on FTP server
       await this.ftpClient.ensureDir(channel.ftpPath);
       
-      // Upload file with progress tracking
-      await this.ftpClient.uploadFrom(
-        options.tempFilePath,
-        ftpPath,
-        {
-          progress: (bytesTransferred) => {
-            progress.bytesUploaded = bytesTransferred;
-            progress.progress = (bytesTransferred / options.totalBytes) * 100;
-            logger.info(`Upload progress for ${sanitizedFilename}: ${progress.progress.toFixed(2)}%`);
-          },
-        }
-      );
+      // Upload file to FTP server
+      await this.ftpClient.uploadFrom(options.tempFilePath, ftpPath);
       
       progress.status = 'processing';
       logger.info(`Successfully uploaded file to FTP: ${ftpPath}`);

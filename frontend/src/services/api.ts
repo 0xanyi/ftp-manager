@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { ApiResponse } from '../types';
 
 class ApiService {
-  private client: AxiosInstance;
+  public client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
@@ -59,4 +59,5 @@ class ApiService {
   }
 }
 
+export type { ApiResponse };
 export const apiService = new ApiService();

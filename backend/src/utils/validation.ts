@@ -20,16 +20,39 @@ export const registerSchema = Joi.object({
 
 // Channel validation schemas
 export const createChannelSchema = Joi.object({
-  name: Joi.string().min(1).max(100).required(),
-  slug: Joi.string().pattern(/^[a-z0-9-]+$/).required(),
-  description: Joi.string().max(500).optional(),
-  ftpPath: Joi.string().pattern(/^\/[a-zA-Z0-9\/_-]*$/).required(),
+  name: Joi.string().min(1).max(100).required().trim(),
+  description: Joi.string().max(500).optional().allow(''),
+  ftpPath: Joi.string().pattern(/^\/[a-zA-Z0-9\/_-]*$/).optional().allow(''),
 });
 
 export const updateChannelSchema = Joi.object({
-  name: Joi.string().min(1).max(100).optional(),
-  description: Joi.string().max(500).optional(),
-  isActive: Joi.boolean().optional(),
+  name: Joi.string().min(1).max(100).optional().allow(''),
+  description: Joi.string().max(500).optional().allow(''),
+  ftpPath: Joi.string().pattern(/^\/[a-zA-Z0-9\/_-]*$/).optional().allow(''),
+});
+
+export const assignUserToChannelSchema = Joi.object({
+  userId: Joi.string().uuid().required(),
+  channelId: Joi.string().uuid().required(),
+});
+
+export const removeUserFromChannelSchema = Joi.object({
+  userId: Joi.string().uuid().required(),
+  channelId: Joi.string().uuid().required(),
+});
+
+// Query parameter validation schemas
+export const paginationQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+});
+
+export const idParamsSchema = Joi.object({
+  id: Joi.string().uuid().required(),
+});
+
+export const channelIdParamsSchema = Joi.object({
+  channelId: Joi.string().uuid().required(),
 });
 
 // File validation schemas
