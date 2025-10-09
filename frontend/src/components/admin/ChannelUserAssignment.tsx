@@ -61,13 +61,16 @@ const ChannelUserAssignment: React.FC<ChannelUserAssignmentProps> = ({
       }> = await adminService.getChannelUsers(channelId);
 
       if (response.success && response.data) {
-        setAssignedUsers(response.data.assignedUsers);
-        setAvailableUsers(response.data.availableUsers);
+        setAssignedUsers(response.data.assignedUsers || []);
+        setAvailableUsers(response.data.availableUsers || []);
       } else {
         throw new Error(response.error?.message || 'Failed to fetch users');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      // Set empty arrays on error to prevent undefined crashes
+      setAssignedUsers([]);
+      setAvailableUsers([]);
     } finally {
       setLoading(false);
     }
