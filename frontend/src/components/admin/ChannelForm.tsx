@@ -90,7 +90,7 @@ const ChannelForm: React.FC<ChannelFormProps> = ({
     }
 
     // FTP path validation
-    const ftpPathPattern = /^\/[a-zA-Z0-9\/_-]*$/;
+    const ftpPathPattern = /^\/[a-zA-Z0-9/_-]*$/;
     if (formData.ftpPath && !ftpPathPattern.test(formData.ftpPath)) {
       newErrors.ftpPath = 'FTP path must start with / and contain only letters, numbers, hyphens, underscores, and forward slashes';
     }
