@@ -18,18 +18,54 @@ export const registerSchema = Joi.object({
   role: Joi.string().valid('ADMIN', 'CHANNEL_USER').default('CHANNEL_USER'),
 });
 
+export const userUpdateSchema = Joi.object({
+  email: Joi.string().email().optional(),
+  password: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
+    }),
+  role: Joi.string().valid('ADMIN', 'CHANNEL_USER').optional(),
+  isActive: Joi.boolean().optional()
+});
+
 // Channel validation schemas
 export const createChannelSchema = Joi.object({
-  name: Joi.string().min(1).max(100).required(),
-  slug: Joi.string().pattern(/^[a-z0-9-]+$/).required(),
-  description: Joi.string().max(500).optional(),
-  ftpPath: Joi.string().pattern(/^\/[a-zA-Z0-9\/_-]*$/).required(),
+  name: Joi.string().min(1).max(100).required().trim(),
+  description: Joi.string().max(500).optional().allow(''),
+  ftpPath: Joi.string().pattern(/^\/[a-zA-Z0-9\/_-]*$/).optional().allow(''),
 });
 
 export const updateChannelSchema = Joi.object({
-  name: Joi.string().min(1).max(100).optional(),
-  description: Joi.string().max(500).optional(),
-  isActive: Joi.boolean().optional(),
+  name: Joi.string().min(1).max(100).optional().allow(''),
+  description: Joi.string().max(500).optional().allow(''),
+  ftpPath: Joi.string().pattern(/^\/[a-zA-Z0-9\/_-]*$/).optional().allow(''),
+});
+
+export const assignUserToChannelSchema = Joi.object({
+  userId: Joi.string().uuid().required(),
+  channelId: Joi.string().uuid().required(),
+});
+
+export const removeUserFromChannelSchema = Joi.object({
+  userId: Joi.string().uuid().required(),
+  channelId: Joi.string().uuid().required(),
+});
+
+// Query parameter validation schemas
+export const paginationQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(20),
+});
+
+export const idParamsSchema = Joi.object({
+  id: Joi.string().uuid().required(),
+});
+
+export const channelIdParamsSchema = Joi.object({
+  channelId: Joi.string().uuid().required(),
 });
 
 // File validation schemas

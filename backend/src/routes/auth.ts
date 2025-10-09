@@ -6,6 +6,7 @@ import { AppError } from '../middleware/errorHandler';
 import { authenticate, AuthenticatedRequest, authorize } from '../middleware/auth';
 import { loginSchema, registerSchema } from '../utils/validation';
 import { ApiResponse, JwtTokens, AuthPayload } from '../types';
+import auditService from '../services/auditService';
 
 const router = Router();
 
@@ -60,6 +61,15 @@ router.post('/register', async (req: Request, res: Response, next): Promise<void
         tokens,
       },
     };
+
+    await auditService.recordEvent({
+      action: 'USER_REGISTER',
+      actorId: user.id,
+      actorEmail: user.email,
+      entityType: 'USER',
+      entityId: user.id,
+      ipAddress: req.ip,
+    });
     
     res.status(201).json(response);
   } catch (error) {
@@ -135,6 +145,18 @@ router.post('/login', async (req: Request, res: Response, next): Promise<void> =
         tokens,
       },
     };
+
+    await auditService.recordEvent({
+      action: 'LOGIN_SUCCESS',
+      actorId: user.id,
+      actorEmail: user.email,
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: {
+        channelCount: channels.length,
+      },
+      ipAddress: req.ip,
+    });
     
     res.status(200).json(response);
   } catch (error) {

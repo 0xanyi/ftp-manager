@@ -49,6 +49,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     case 'SET_USER':
       return {
         ...state,
+        isLoading: false,
         user: action.payload,
         isAuthenticated: true,
       };
@@ -85,6 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               type: 'SET_USER',
               payload: JSON.parse(user),
             });
+            return; // Token is valid, don't call AUTH_FAILURE
           } else {
             // Token invalid, clear storage
             localStorage.removeItem('authTokens');
@@ -97,6 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
 
+      // Only dispatch AUTH_FAILURE if token is invalid or doesn't exist
       dispatch({ type: 'AUTH_FAILURE' });
     };
 

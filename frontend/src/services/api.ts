@@ -2,7 +2,9 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { ApiResponse } from '../types';
 
 class ApiService {
-  private client: AxiosInstance;
+  public client: AxiosInstance;
+  private csrfToken: string | null = null;
+  private csrfTokenExpiry: number = 0;
 
   constructor() {
     this.client = axios.create({
@@ -10,14 +12,21 @@ class ApiService {
       timeout: 30000,
     });
 
-    // Request interceptor to add auth token
+    // Request interceptor to add auth token and CSRF token
     this.client.interceptors.request.use(
-      (config) => {
+      async (config) => {
         const tokens = localStorage.getItem('authTokens');
         if (tokens) {
           const { accessToken } = JSON.parse(tokens);
           config.headers.Authorization = `Bearer ${accessToken}`;
         }
+
+        // Add CSRF token for state-changing requests
+        if (config.method && ['post', 'put', 'delete', 'patch'].includes(config.method.toLowerCase())) {
+          const csrfToken = await this.getCsrfToken();
+          config.headers['x-csrf-token'] = csrfToken;
+        }
+
         return config;
       },
       (error) => Promise.reject(error)
@@ -36,6 +45,33 @@ class ApiService {
         return Promise.reject(error);
       }
     );
+  }
+
+  private async getCsrfToken(): Promise<string> {
+    // Check if we have a valid cached token
+    const now = Date.now();
+    if (this.csrfToken && this.csrfTokenExpiry > now) {
+      return this.csrfToken;
+    }
+
+    // Fetch a new CSRF token
+    try {
+      const response = await axios.get('/api/security/csrf-token', {
+        headers: {
+          Authorization: this.client.defaults.headers.common['Authorization']
+        }
+      });
+
+      const token = response.data.data.token;
+      this.csrfToken = token;
+      // Set expiry to 14 minutes (token is valid for 15 minutes)
+      this.csrfTokenExpiry = now + 14 * 60 * 1000;
+      
+      return token;
+    } catch (error) {
+      console.error('Failed to fetch CSRF token:', error);
+      throw new Error('Failed to fetch CSRF token');
+    }
   }
 
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
@@ -59,4 +95,5 @@ class ApiService {
   }
 }
 
+export type { ApiResponse };
 export const apiService = new ApiService();

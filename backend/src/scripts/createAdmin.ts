@@ -78,10 +78,11 @@ async function createAdmin() {
     console.log(`ID: ${admin.id}`);
     console.log('\nYou can now use these credentials to log in to the admin panel.');
 
-  } catch (error: any) {
-    console.error('❌ Error creating admin:', error.message);
-    
-    if (error.code === 'P2002') {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Error creating admin:', errorMessage);
+
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       console.log('A user with this email already exists');
     }
   } finally {
