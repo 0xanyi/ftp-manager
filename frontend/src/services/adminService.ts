@@ -77,6 +77,19 @@ interface UserListResponse {
 }
 
 class AdminService {
+  private async getCsrfToken(): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/api/security/csrf-token`, {
+      headers: this.getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch CSRF token');
+    }
+
+    const data = await response.json();
+    return data.data.token;
+  }
+
   private getAuthHeaders(): HeadersInit {
     const authTokens = localStorage.getItem('authTokens');
     let token = null;
@@ -93,6 +106,14 @@ class AdminService {
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` })
+    };
+  }
+
+  private async getAuthHeadersWithCsrf(): Promise<HeadersInit> {
+    const csrfToken = await this.getCsrfToken();
+    return {
+      ...this.getAuthHeaders(),
+      'x-csrf-token': csrfToken
     };
   }
 
@@ -194,7 +215,7 @@ class AdminService {
   }): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: await this.getAuthHeadersWithCsrf(),
       body: JSON.stringify(userData)
     });
 
@@ -218,7 +239,7 @@ class AdminService {
   ): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
+      headers: await this.getAuthHeadersWithCsrf(),
       body: JSON.stringify(userData)
     });
 
@@ -235,7 +256,7 @@ class AdminService {
   async deactivateUser(userId: string): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders()
+      headers: await this.getAuthHeadersWithCsrf()
     });
 
     if (!response.ok) {
@@ -274,7 +295,7 @@ class AdminService {
       `${API_BASE_URL}/api/admin/users/${userId}/channels`,
       {
         method: 'PUT',
-        headers: this.getAuthHeaders(),
+        headers: await this.getAuthHeadersWithCsrf(),
         body: JSON.stringify({ channelIds })
       }
     );
@@ -344,7 +365,7 @@ class AdminService {
   async deleteChannel(channelId: string): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders()
+      headers: await this.getAuthHeadersWithCsrf()
     });
 
     if (!response.ok) {
@@ -365,7 +386,7 @@ class AdminService {
   }): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/channels`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: await this.getAuthHeadersWithCsrf(),
       body: JSON.stringify(data)
     });
 
@@ -388,7 +409,7 @@ class AdminService {
   }): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
+      headers: await this.getAuthHeadersWithCsrf(),
       body: JSON.stringify(data)
     });
 
@@ -420,7 +441,7 @@ class AdminService {
   async updateChannelUsers(channelId: string, userIds: string[]): Promise<ApiResponse<any>> {
     const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}/users`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
+      headers: await this.getAuthHeadersWithCsrf(),
       body: JSON.stringify({ userIds })
     });
 
