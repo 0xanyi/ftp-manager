@@ -4,7 +4,12 @@ import { AppError } from './errorHandler';
 import CsrfService from '../services/csrfService';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-const EXCLUDED_PATHS = new Set(['/api/security/csrf-token', '/api/health']);
+const EXCLUDED_PATHS = new Set([
+  '/api/security/csrf-token',
+  '/api/health',
+  '/api/auth/login',
+  '/api/auth/register'
+]);
 
 /**
  * Middleware enforcing CSRF protection for state-changing requests.

@@ -136,13 +136,14 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response): Pro
     };
 
     await auditService.recordEvent({
-      action: 'USER_UPDATE',
+      action: 'USER_VIEW',
       actorId: req.user?.id,
       actorEmail: req.user?.email,
       entityType: 'USER',
       entityId: user.id,
       metadata: {
-        updates: Object.keys(value),
+        targetUserId: user.id,
+        targetEmail: user.email,
       },
       ipAddress: req.ip,
     });

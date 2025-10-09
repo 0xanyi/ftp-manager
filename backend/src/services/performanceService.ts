@@ -47,6 +47,8 @@ export interface PerformanceMetrics {
 export class PerformanceService {
   private static metrics: PerformanceMetrics[] = [];
   private static readonly MAX_METRICS_HISTORY = 1440; // 24 hours of minute data
+  private static readonly UPLOAD_METRICS_CACHE_KEY = 'metrics:uploads';
+  private static readonly UPLOAD_METRICS_TTL = 300;
 
   /**
    * Collect current system performance metrics
@@ -136,7 +138,7 @@ export class PerformanceService {
     try {
       const info = await redis.info('memory');
       const memoryUsage = parseInt(info.match(/used_memory:(\d+)/)?.[1] || '0');
-      const keyCount = await redis.dbsize();
+      const keyCount = await redis.dbSize();
       
       // Simulate hit rate - would need to implement actual tracking
       const hitRate = 0.85; // 85% hit rate
@@ -162,8 +164,9 @@ export class PerformanceService {
   private static async getUploadMetrics() {
     try {
       // Get upload statistics from cache or database
-      const cacheKey = 'metrics:uploads';
-      const cached = await CacheService.get<any>(cacheKey);
+      type UploadMetrics = PerformanceMetrics['uploads'];
+      const cacheKey = this.UPLOAD_METRICS_CACHE_KEY;
+      const cached = await CacheService.get<UploadMetrics>(cacheKey);
       
       if (cached) {
         return cached;
@@ -192,7 +195,7 @@ export class PerformanceService {
         }),
       ]);
 
-      const metrics = {
+      const metrics: UploadMetrics = {
         active,
         completed,
         failed,
@@ -200,7 +203,7 @@ export class PerformanceService {
       };
 
       // Cache for 5 minutes
-      await CacheService.set(cacheKey, metrics, 300);
+      await CacheService.set(cacheKey, metrics, this.UPLOAD_METRICS_TTL);
       
       return metrics;
     } catch (error) {

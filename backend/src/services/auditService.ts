@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../app';
 import logger from '../utils/logger';
 
@@ -7,7 +8,7 @@ export interface AuditEvent {
   actorEmail?: string;
   entityType?: string;
   entityId?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
   ipAddress?: string;
 }
 
@@ -24,17 +25,20 @@ class AuditService {
    */
   async recordEvent(event: AuditEvent): Promise<void> {
     try {
-      await prisma.auditLog.create({
-        data: {
-          action: event.action,
-          actorId: event.actorId,
-          actorEmail: event.actorEmail,
-          entityType: event.entityType,
-          entityId: event.entityId,
-          metadata: event.metadata ?? null,
-          ipAddress: event.ipAddress,
-        },
-      });
+      const data: Prisma.AuditLogUncheckedCreateInput = {
+        action: event.action,
+        actorId: event.actorId,
+        actorEmail: event.actorEmail,
+        entityType: event.entityType,
+        entityId: event.entityId,
+        ipAddress: event.ipAddress,
+      };
+
+      if (typeof event.metadata !== 'undefined') {
+        data.metadata = event.metadata;
+      }
+
+      await prisma.auditLog.create({ data });
     } catch (error) {
       logger.error('Failed to record audit event', { error, event });
     }

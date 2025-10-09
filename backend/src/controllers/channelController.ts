@@ -3,7 +3,16 @@ import { ChannelService } from '../services/channelService';
 import { prisma } from '../app';
 import { ApiResponse } from '../types';
 
-const channelService = new ChannelService(prisma);
+// Initialize service after prisma is available
+let channelService: ChannelService;
+
+function getChannelService() {
+  if (!channelService) {
+    console.log('Initializing ChannelService with prisma:', !!prisma);
+    channelService = new ChannelService(prisma);
+  }
+  return channelService;
+}
 
 /**
  * Create a new channel (Admin only)
@@ -23,7 +32,7 @@ export const createChannel = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const result = await channelService.createChannel({
+    const result = await getChannelService().createChannel({
       name: name.trim(),
       description: description?.trim(),
       ftpPath: ftpPath?.trim()
@@ -52,16 +61,45 @@ export const createChannel = async (req: Request, res: Response): Promise<void> 
  */
 export const getAllChannels = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('getAllChannels called with query params:', req.query);
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string || '';
+    const isActive = req.query.isActive === 'false' ? false : true; // Default to true if not specified
+    const sortBy = (req.query.sortBy as string) || 'createdAt';
+    const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
+
     const validPage = Math.max(1, page);
     const validLimit = Math.min(100, Math.max(1, limit));
 
-    const result = await channelService.getAllChannels(validPage, validLimit);
+    // Log the parameters being used
+    console.log(`getAllChannels: page=${validPage}, limit=${validLimit}, search=${search}, isActive=${isActive}, sortBy=${sortBy}, sortOrder=${sortOrder}`);
+
+    // Build where clause for filtering
+    const where: any = {
+      isActive
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { slug: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    // Build order by clause
+    const orderBy: any = {};
+    orderBy[sortBy] = sortOrder;
+
+    const result = await getChannelService().getAllChannels(validPage, validLimit, where, orderBy);
 
     if (result.success) {
+      console.log(`getAllChannels: returning ${result.data?.channels.length} channels`);
       res.status(200).json(result);
     } else {
+      console.error('getAllChannels: service returned error:', result.error);
       res.status(500).json(result);
     }
   } catch (error) {
@@ -84,7 +122,7 @@ export const getChannelById = async (req: Request, res: Response): Promise<void>
     const { id } = req.params;
     const userId = (req as { user?: { id: string } }).user?.id;
 
-    const result = await channelService.getChannelById(id, userId);
+    const result = await getChannelService().getChannelById(id, userId);
 
     if (result.success) {
       res.status(200).json(result);
@@ -123,7 +161,7 @@ export const getUserChannels = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const result = await channelService.getUserChannels(userId);
+    const result = await getChannelService().getUserChannels(userId);
 
     if (result.success) {
       res.status(200).json(result);
@@ -183,7 +221,7 @@ export const updateChannel = async (req: Request, res: Response): Promise<void> 
       updateData.ftpPath = ftpPath?.trim();
     }
 
-    const result = await channelService.updateChannel(id, updateData);
+    const result = await getChannelService().updateChannel(id, updateData);
 
     if (result.success) {
       res.status(200).json(result);
@@ -211,7 +249,7 @@ export const deleteChannel = async (req: Request, res: Response): Promise<void> 
   try {
     const { id } = req.params;
 
-    const result = await channelService.deleteChannel(id);
+    const result = await getChannelService().deleteChannel(id);
 
     if (result.success) {
       res.status(200).json(result);
@@ -261,7 +299,7 @@ export const assignUserToChannel = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const result = await channelService.assignUserToChannel(userId, channelId, assignedBy);
+    const result = await getChannelService().assignUserToChannel(userId, channelId, assignedBy);
 
     if (result.success) {
       res.status(201).json(result);
@@ -300,7 +338,7 @@ export const removeUserFromChannel = async (req: Request, res: Response): Promis
       return;
     }
 
-    const result = await channelService.removeUserFromChannel(userId, channelId);
+    const result = await getChannelService().removeUserFromChannel(userId, channelId);
 
     if (result.success) {
       res.status(200).json(result);
@@ -350,7 +388,7 @@ export const getChannelUsers = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const result = await channelService.getChannelUsers(channelId);
+    const result = await getChannelService().getChannelUsers(channelId);
 
     if (result.success) {
       res.status(200).json(result);
@@ -376,7 +414,7 @@ export const getAvailableUsers = async (req: Request, res: Response): Promise<vo
   try {
     const { channelId } = req.params;
 
-    const result = await channelService.getAvailableUsers(channelId);
+    const result = await getChannelService().getAvailableUsers(channelId);
 
     if (result.success) {
       res.status(200).json(result);
@@ -429,7 +467,7 @@ export const getAdminChannels = async (req: Request, res: Response): Promise<voi
     const orderBy: any = {};
     orderBy[sortBy as string] = sortOrder;
 
-    const result = await channelService.getAllChannels(pageNum, limitNum, where, orderBy);
+    const result = await getChannelService().getAllChannels(pageNum, limitNum, where, orderBy);
 
     if (result.success) {
       res.status(200).json(result);
@@ -480,7 +518,7 @@ export const updateChannelUsers = async (req: Request, res: Response): Promise<v
     }
 
     // Get current assignments
-    const currentAssignmentsResult = await channelService.getChannelUsers(id);
+    const currentAssignmentsResult = await getChannelService().getChannelUsers(id);
     if (!currentAssignmentsResult.success) {
       res.status(404).json({
         success: false,
@@ -509,7 +547,7 @@ export const updateChannelUsers = async (req: Request, res: Response): Promise<v
     }
 
     // Get updated assignments
-    const updatedAssignments = await channelService.getChannelUsers(id);
+    const updatedAssignments = await getChannelService().getChannelUsers(id);
 
     const response = {
       success: true,

@@ -56,7 +56,7 @@ export class UploadService {
     queue: Array<{
       chunkIndex: number;
       chunkData: Buffer;
-      resolve: () => void;
+      resolve: () => Promise<void>;
       reject: (error: Error) => void;
     }>;
   }>();
@@ -167,7 +167,21 @@ export class UploadService {
       uploadTracking.queue.push({
         chunkIndex,
         chunkData: buffer,
-        resolve: () => this.processChunk(buffer, uploadId, chunkIndex, totalChunks, chunkSize, totalSize, _filename, _mimeType, _channelId, _userId).then(resolve).catch(reject),
+        resolve: () =>
+          this.processChunk(
+            buffer,
+            uploadId,
+            chunkIndex,
+            totalChunks,
+            chunkSize,
+            totalSize,
+            _filename,
+            _mimeType,
+            _channelId,
+            _userId,
+          )
+            .then(resolve)
+            .catch(reject),
         reject,
       });
 

@@ -122,7 +122,7 @@ export const websocketRateLimit = rateLimit({
   legacyHeaders: false,
   skip: (req: Request) => {
     // Skip rate limiting for WebSocket upgrade requests that are already authenticated
-    return req.headers.upgrade === 'websocket' && req.headers.authorization;
+    return req.headers.upgrade === 'websocket' && typeof req.headers.authorization === 'string';
   },
   handler: (req: Request, res: Response) => {
     res.status(429).json({

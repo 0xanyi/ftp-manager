@@ -25,7 +25,7 @@ export class CacheService {
    */
   static async set(key: string, value: any, ttl: number = this.DEFAULT_TTL): Promise<void> {
     try {
-      await redis.setex(key, ttl, JSON.stringify(value));
+      await redis.setEx(key, ttl, JSON.stringify(value));
     } catch (error) {
       logger.error(`Cache set error for key ${key}:`, error);
     }
@@ -49,7 +49,7 @@ export class CacheService {
     try {
       const keys = await redis.keys(pattern);
       if (keys.length > 0) {
-        await redis.del(...keys);
+        await redis.del(keys);
       }
     } catch (error) {
       logger.error(`Cache invalidate pattern error for ${pattern}:`, error);
@@ -263,7 +263,7 @@ export class CacheService {
     
     try {
       const testKey = 'health:check';
-      await redis.set(testKey, 'test', 'EX', 10);
+      await redis.set(testKey, 'test', { EX: 10 });
       const value = await redis.get(testKey);
       await redis.del(testKey);
       
