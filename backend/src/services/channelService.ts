@@ -4,7 +4,11 @@ import { generateSlug } from '../utils/helpers';
 import CacheService from './cacheService';
 
 export class ChannelService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) {
+    console.log('ChannelService constructor called');
+    console.log('Prisma client received:', !!prisma);
+    console.log('Prisma channel model:', !!prisma?.channel);
+  }
 
   /**
    * Create a new channel
@@ -69,21 +73,29 @@ export class ChannelService {
   async getAllChannels(
     page: number = 1,
     limit: number = 20,
-    where?: any,
-    orderBy?: any
-  ): Promise<ApiResponse<{ channels: import('@prisma/client').Channel[]; total: number; page: number; totalPages: number }>> {
+    where?: Record<string, unknown>,
+    orderBy?: Record<string, unknown>
+  ): Promise<ApiResponse<{ channels: import('@prisma/client').Channel[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>> {
     try {
+      console.log('ChannelService.getAllChannels called with:', { page, limit, where, orderBy });
+
       const skip = (page - 1) * limit;
+      const defaultWhere = { isActive: true };
+      const finalWhere = where || defaultWhere;
+      const finalOrderBy = orderBy || { createdAt: 'desc' };
+
+      console.log('ChannelService.getAllChannels: final query params:', { skip, finalWhere, finalOrderBy });
 
       const [channels, total] = await Promise.all([
         this.prisma.channel.findMany({
-          where: where || { isActive: true },
-          orderBy: orderBy || { createdAt: 'desc' },
+          where: finalWhere,
+          orderBy: finalOrderBy,
           include: {
             _count: {
               select: {
                 files: true,
-                guestUploadLinks: true
+                guestUploadLinks: true,
+                userChannels: true
               }
             }
           },
@@ -91,9 +103,11 @@ export class ChannelService {
           take: limit
         }),
         this.prisma.channel.count({
-          where: where || { isActive: true }
+          where: finalWhere
         })
       ]);
+
+      console.log(`ChannelService.getAllChannels: found ${channels.length} channels, total count: ${total}`);
 
       const totalPages = Math.ceil(total / limit);
 
@@ -101,12 +115,16 @@ export class ChannelService {
         success: true,
         data: {
           channels,
-          total,
-          page,
-          totalPages
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages
+          }
         }
       };
     } catch (error) {
+      console.error('ChannelService.getAllChannels error:', error);
       return {
         success: false,
         error: {

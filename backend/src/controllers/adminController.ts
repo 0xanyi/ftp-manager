@@ -231,7 +231,7 @@ export const getAdminFiles = async (req: AuthenticatedRequest, res: Response): P
     const orderBy: Record<string, unknown> = {};
     orderBy[sortBy as string] = sortOrder;
 
-    const [files, total] = await Promise.all([
+    const [files, total, aggregateStats] = await Promise.all([
       prisma.file.findMany({
         where,
         include: {
@@ -253,8 +253,26 @@ export const getAdminFiles = async (req: AuthenticatedRequest, res: Response): P
         skip: offset,
         take: limitNum
       }),
-      prisma.file.count({ where })
+      prisma.file.count({ where }),
+      prisma.file.aggregate({
+        where,
+        _sum: { size: true },
+        _avg: { size: true },
+        _max: { size: true }
+      })
     ]);
+
+    // Get the largest file details
+    const largestFile = await prisma.file.findFirst({
+      where: {
+        ...where,
+        size: aggregateStats._max.size || 0
+      },
+      select: {
+        originalName: true,
+        size: true
+      }
+    });
 
     const response: ApiResponse = {
       success: true,
@@ -265,6 +283,15 @@ export const getAdminFiles = async (req: AuthenticatedRequest, res: Response): P
           limit: limitNum,
           total,
           totalPages: Math.ceil(total / limitNum)
+        },
+        summary: {
+          totalSize: Number(aggregateStats._sum.size || 0),
+          totalFiles: total,
+          avgFileSize: Number(aggregateStats._avg.size || 0),
+          largestFile: {
+            name: largestFile?.originalName || '',
+            size: largestFile?.size || 0
+          }
         }
       }
     };

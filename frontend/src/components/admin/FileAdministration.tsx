@@ -382,7 +382,7 @@ const FileAdministration: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Files</p>
-              <p className="text-2xl font-bold text-gray-900">{summary.totalFiles.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">{summary?.totalFiles?.toLocaleString() || '0'}</p>
             </div>
           </div>
         </div>
@@ -394,7 +394,7 @@ const FileAdministration: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Size</p>
-              <p className="text-2xl font-bold text-gray-900">{formatBytes(summary.totalSize)}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatBytes(summary?.totalSize || 0)}</p>
             </div>
           </div>
         </div>
@@ -406,7 +406,7 @@ const FileAdministration: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Avg File Size</p>
-              <p className="text-2xl font-bold text-gray-900">{formatBytes(summary.avgFileSize)}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatBytes(summary?.avgFileSize || 0)}</p>
             </div>
           </div>
         </div>
@@ -419,9 +419,9 @@ const FileAdministration: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Largest File</p>
               <p className="text-lg font-bold text-gray-900 truncate">
-                {summary.largestFile.name || 'N/A'}
+                {summary?.largestFile?.name || 'N/A'}
               </p>
-              <p className="text-xs text-gray-500">{formatBytes(summary.largestFile.size)}</p>
+              <p className="text-xs text-gray-500">{formatBytes(summary?.largestFile?.size || 0)}</p>
             </div>
           </div>
         </div>
@@ -466,7 +466,7 @@ const FileAdministration: React.FC = () => {
                 {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
               </span>
               <Button
-                variant="destructive"
+                variant="danger"
                 onClick={handleBulkDelete}
                 disabled={isDeleting}
                 className="flex items-center"
@@ -696,7 +696,7 @@ const FileAdministration: React.FC = () => {
                           <Download className="w-4 h-4" />
                         </Button>
                         <Button
-                          variant="destructive"
+                          variant="danger"
                           size="sm"
                           onClick={() => handleDeleteFile(file.id)}
                           className="p-1"

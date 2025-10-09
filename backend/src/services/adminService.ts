@@ -244,25 +244,17 @@ export class AdminService {
       // Get storage usage by channel
       const storageByChannel = await prisma.channel.findMany({
         where: { isActive: true },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          _sum: {
-            files: {
-              where: { isActive: true },
-              select: { size: true }
+        include: {
+          _count: {
+            select: {
+              files: {
+                where: { isActive: true }
+              }
             }
           },
-          _count: {
-            files: {
-              where: { isActive: true }
-            }
-          }
-        },
-        orderBy: {
           files: {
-            _count: 'desc'
+            where: { isActive: true },
+            select: { size: true }
           }
         }
       });
@@ -279,7 +271,7 @@ export class AdminService {
           name: channel.name,
           slug: channel.slug,
           fileCount: channel._count.files,
-          totalSize: channel._sum.files?.reduce((acc, file) => acc + file.size, BigInt(0)) || BigInt(0)
+          totalSize: channel.files.reduce((acc: bigint, file) => acc + file.size, BigInt(0))
         })),
         period: 'last_30_days'
       };
