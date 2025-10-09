@@ -12,11 +12,13 @@ import channelRoutes from './routes/channels';
 import fileRoutes from './routes/files';
 import adminRoutes from './routes/admin';
 import performanceRoutes from './routes/performance';
+import securityRoutes from './routes/security';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 import { generalRateLimit, uploadRateLimit, authRateLimit, downloadRateLimit, adminRateLimit } from './middleware/rateLimiter';
+import { csrfProtection } from './middleware/csrfProtection';
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +54,12 @@ app.use(requestLogger);
 
 // Apply general rate limiting to all API routes
 app.use('/api', generalRateLimit);
+
+// Security utility routes (e.g., CSRF token)
+app.use('/api/security', securityRoutes);
+
+// Apply CSRF protection to state-changing requests
+app.use(csrfProtection);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

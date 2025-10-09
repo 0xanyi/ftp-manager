@@ -5,6 +5,7 @@ import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { ApiResponse } from '../types';
 import { registerSchema, userUpdateSchema } from '../utils/validation';
+import auditService from '../services/auditService';
 
 /**
  * Get list of users with pagination and filtering
@@ -134,6 +135,18 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response): Pro
       data: { user }
     };
 
+    await auditService.recordEvent({
+      action: 'USER_UPDATE',
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: {
+        updates: Object.keys(value),
+      },
+      ipAddress: req.ip,
+    });
+
     res.status(200).json(response);
   } catch (error) {
     if (error instanceof AppError) {
@@ -189,6 +202,19 @@ export const createUser = async (req: AuthenticatedRequest, res: Response): Prom
       success: true,
       data: { user }
     };
+
+    await auditService.recordEvent({
+      action: 'USER_CREATE',
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: {
+        newUserEmail: user.email,
+        role: user.role,
+      },
+      ipAddress: req.ip,
+    });
 
     res.status(201).json(response);
   } catch (error) {
@@ -304,6 +330,18 @@ export const deactivateUser = async (req: AuthenticatedRequest, res: Response): 
       data: { isActive: false }
     });
 
+    await auditService.recordEvent({
+      action: 'USER_DEACTIVATE',
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+      entityType: 'USER',
+      entityId: id,
+      metadata: {
+        targetEmail: existingUser.email,
+      },
+      ipAddress: req.ip,
+    });
+
     const response: ApiResponse = {
       success: true,
       data: { message: 'User deactivated successfully' }
@@ -346,6 +384,18 @@ export const reactivateUser = async (req: AuthenticatedRequest, res: Response): 
         createdAt: true,
         lastLoginAt: true
       }
+    });
+
+    await auditService.recordEvent({
+      action: 'USER_REACTIVATE',
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+      entityType: 'USER',
+      entityId: user.id,
+      metadata: {
+        targetEmail: user.email,
+      },
+      ipAddress: req.ip,
     });
 
     const response: ApiResponse = {
@@ -506,6 +556,19 @@ export const updateUserChannels = async (req: AuthenticatedRequest, res: Respons
         assignedChannels: updatedAssignments.map(ua => ua.channel)
       }
     };
+
+    await auditService.recordEvent({
+      action: 'USER_CHANNEL_UPDATE',
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+      entityType: 'USER',
+      entityId: id,
+      metadata: {
+        addedChannels: toAdd,
+        removedChannels: toRemove,
+      },
+      ipAddress: req.ip,
+    });
 
     res.status(200).json(response);
   } catch (error) {

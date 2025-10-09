@@ -4,6 +4,7 @@ import { AppError } from '../middleware/errorHandler';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { ApiResponse } from '../types';
 import { User, Channel, File } from '@prisma/client';
+import auditService from '../services/auditService';
 
 /**
  * Get admin dashboard statistics
@@ -148,26 +149,21 @@ export const getSystemHealth = async (req: AuthenticatedRequest, res: Response):
  */
 export const getAuditLogs = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { page = '1', limit = '50' } = req.query;
+    const { page = '1', limit = '50', action = '', entityType = '' } = req.query;
 
-    const pageNum = parseInt(page as string, 10);
-    const limitNum = parseInt(limit as string, 10);
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 50;
 
-    // Note: This would require an audit_logs table to be implemented
-    // For now, return a placeholder response
-    const auditLogs = {
-      logs: [],
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: 0,
-        totalPages: 0
-      }
-    };
+    const logs = await auditService.getAuditLogs({
+      page: pageNum,
+      limit: limitNum,
+      action: action ? String(action) : undefined,
+      entityType: entityType ? String(entityType) : undefined,
+    });
 
     const response: ApiResponse = {
       success: true,
-      data: auditLogs
+      data: logs
     };
 
     res.status(200).json(response);

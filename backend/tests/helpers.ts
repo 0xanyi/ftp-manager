@@ -23,6 +23,7 @@ export const generateTestToken = (user: { id: string; email: string; role: strin
 
 export const setupTestDb = async () => {
   // Clean up test data before running tests
+  await prisma.auditLog.deleteMany();
   await prisma.userChannel.deleteMany();
   await prisma.guestUploadLink.deleteMany();
   await prisma.file.deleteMany();
@@ -32,6 +33,7 @@ export const setupTestDb = async () => {
 
 export const cleanupTestDb = async () => {
   // Clean up test data after running tests
+  await prisma.auditLog.deleteMany();
   await prisma.userChannel.deleteMany();
   await prisma.guestUploadLink.deleteMany();
   await prisma.file.deleteMany();

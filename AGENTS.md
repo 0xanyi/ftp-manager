@@ -129,6 +129,8 @@ Web-based file transfer platform with channel-based organization and role-based 
 • JWT authentication with refresh tokens
 • Role-based endpoint protection
 • File name and path sanitization
+• CSRF token validation on state-changing requests (`GET /api/security/csrf-token` + `x-csrf-token` header)
+• Malware scanning before FTP transfer
 
 ### Database Operations
 • Always use Prisma for database operations
@@ -206,6 +208,9 @@ Default admin credentials (after running create-admin):
 - `GET /api/auth/me` - Get current user
 - `POST /api/auth/logout` - Logout
 - `POST /api/auth/refresh` - Refresh token
+
+### Security
+- `GET /api/security/csrf-token` - Issue CSRF token for state-changing requests
 
 ### Files
 - `POST /api/files/upload/initialize` - Initialize chunked upload
@@ -288,7 +293,7 @@ Default admin credentials (after running create-admin):
 - [x] JWT token security
 - [x] Database query safety
 - [x] Rate limiting implemented (6 different rate limiters)
-- [ ] HTTPS in production
+- [x] HTTPS in production (Coolify-managed TLS)
 
 ## Performance Optimizations Applied ✅
 
@@ -350,7 +355,7 @@ Default admin credentials (after running create-admin):
 - **Admin Interface**: Complete and fully functional ✅
 - **API Endpoints**: All admin endpoints implemented ✅
 - **Frontend Components**: Comprehensive admin interface ✅
-- **Security**: Full authentication, authorization, and rate limiting ✅
+- **Security**: Full authentication, authorization, CSRF enforcement, malware scanning, and rate limiting ✅
 - **Performance**: Optimized with caching, indexing, and monitoring ✅
 
 ### 📊 Metrics
@@ -370,5 +375,5 @@ Default admin credentials (after running create-admin):
 
 **This document serves as the complete development guide for all agents working on the ToovyDrop project. All guidelines are mandatory unless explicitly marked as optional.**
 
-**Last Updated**: December 2024 - Phase VI Complete
+**Last Updated**: October 9 2025 - Security Hardening & CSRF Enforcement
 **Next Milestone**: Phase VII - Production Deployment & Monitoring

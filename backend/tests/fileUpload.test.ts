@@ -5,6 +5,14 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs-extra';
 import path from 'path';
 
+const getCsrfToken = async () => {
+  const response = await request(app)
+    .get('/api/security/csrf-token')
+    .expect(200);
+
+  return String(response.body.data.token);
+};
+
 // Test data
 const testUser = {
   id: 'test-user-id',
@@ -108,9 +116,12 @@ afterAll(async () => {
 describe('File Upload API', () => {
   describe('POST /api/files/upload/initialize', () => {
     it('should initialize upload with valid data', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'test.txt',
           mimeType: 'text/plain',
@@ -125,8 +136,11 @@ describe('File Upload API', () => {
     });
 
     it('should reject upload without authentication', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/initialize')
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'test.txt',
           mimeType: 'text/plain',
@@ -138,9 +152,12 @@ describe('File Upload API', () => {
     });
 
     it('should reject upload with invalid file type', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'test.exe',
           mimeType: 'application/x-executable',
@@ -153,9 +170,12 @@ describe('File Upload API', () => {
     });
 
     it('should reject upload with file size too large', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'large.bin',
           mimeType: 'application/octet-stream',
@@ -168,9 +188,12 @@ describe('File Upload API', () => {
     });
 
     it('should reject upload to non-existent channel', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'test.txt',
           mimeType: 'text/plain',
@@ -188,9 +211,12 @@ describe('File Upload API', () => {
 
     beforeEach(async () => {
       // Initialize an upload for testing
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'test.txt',
           mimeType: 'text/plain',
@@ -228,10 +254,13 @@ describe('File Upload API', () => {
     let uploadId: string;
 
     beforeEach(async () => {
+      const csrfToken = await getCsrfToken();
+
       // Initialize an upload for testing
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'test.txt',
           mimeType: 'text/plain',
@@ -243,9 +272,12 @@ describe('File Upload API', () => {
     });
 
     it('should cancel upload successfully', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .delete(`/api/files/upload/${uploadId}/cancel`)
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -253,9 +285,12 @@ describe('File Upload API', () => {
     });
 
     it('should handle cancellation of non-existent upload gracefully', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .delete('/api/files/upload/non-existent/cancel')
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken);
 
       expect(response.status).toBe(200); // Should still return success
     });
@@ -343,9 +378,12 @@ describe('File Upload API', () => {
 
   describe('DELETE /api/files/:fileId', () => {
     it('should handle file deletion (requires actual file)', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .delete('/api/files/non-existent-file-id')
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken);
 
       expect(response.status).toBe(500); // Will fail because file doesn't exist
       expect(response.body.error).toContain('not found');
@@ -358,10 +396,13 @@ describe('File Validation', () => {
     let uploadId: string;
 
     beforeEach(async () => {
+      const csrfToken = await getCsrfToken();
+
       // Initialize upload
       const response = await request(app)
         .post('/api/files/upload/initialize')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           filename: 'chunked.txt',
           mimeType: 'text/plain',
@@ -373,9 +414,12 @@ describe('File Validation', () => {
     });
 
     it('should reject chunk upload without file data', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/files/upload/chunk')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           uploadId,
           chunkIndex: 0,
@@ -392,11 +436,13 @@ describe('File Validation', () => {
     });
 
     it('should reject chunk upload with invalid chunk index', async () => {
+      const csrfToken = await getCsrfToken();
       const chunkData = Buffer.alloc(5 * 1024, 'test data');
       
       const response = await request(app)
         .post('/api/files/upload/chunk')
         .set('Authorization', `Bearer ${authToken}`)
+        .set('x-csrf-token', csrfToken)
         .field('uploadId', uploadId)
         .field('chunkIndex', 5) // Invalid index
         .field('totalChunks', 2)
@@ -410,5 +456,46 @@ describe('File Validation', () => {
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('Invalid chunk index');
     });
+  });
+});
+
+describe('Security scanning', () => {
+  it('should reject files containing malware signatures', async () => {
+    const eicarSignature =
+      'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
+    const eicarBuffer = Buffer.from(eicarSignature, 'utf8');
+
+    const initCsrf = await getCsrfToken();
+    const initResponse = await request(app)
+      .post('/api/files/upload/initialize')
+      .set('Authorization', `Bearer ${authToken}`)
+      .set('x-csrf-token', initCsrf)
+      .send({
+        filename: 'eicar.txt',
+        mimeType: 'text/plain',
+        size: eicarBuffer.length,
+        channelId: testChannel.id,
+      });
+
+    const uploadId = initResponse.body.data.uploadId;
+
+    const chunkCsrf = await getCsrfToken();
+    const uploadResponse = await request(app)
+      .post('/api/files/upload/chunk')
+      .set('Authorization', `Bearer ${authToken}`)
+      .set('x-csrf-token', chunkCsrf)
+      .field('uploadId', uploadId)
+      .field('chunkIndex', 0)
+      .field('totalChunks', 1)
+      .field('chunkSize', eicarBuffer.length)
+      .field('totalSize', eicarBuffer.length)
+      .field('filename', 'eicar.txt')
+      .field('mimeType', 'text/plain')
+      .field('channelId', testChannel.id)
+      .attach('chunk', eicarBuffer, 'eicar.txt');
+
+    expect(uploadResponse.status).toBe(400);
+    expect(uploadResponse.body.success).toBe(false);
+    expect(uploadResponse.body.error).toContain('security scan');
   });
 });

@@ -235,6 +235,7 @@ The application now includes comprehensive performance monitoring:
 - `FTP_PORT`: FTP server port
 - `FTP_USER`: FTP username
 - `FTP_PASSWORD`: FTP password
+- `ENABLE_MALWARE_SCAN`: Enable or disable server-side malware scanning (`true` by default)
 
 ### Frontend
 
@@ -370,10 +371,21 @@ The application now includes comprehensive performance monitoring:
 - File type and size restrictions
 - Path traversal prevention
 - Filename sanitization
+- CSRF token enforcement for state-changing requests
+- Server-side malware scanning before FTP transfer
 - **Comprehensive rate limiting** with 6 different rate limiters for uploads, auth, downloads, admin, etc.
 - **User-based and IP-based limiting** strategies to prevent abuse
 - **WebSocket connection protection** with connection limits
 - HTTPS ready for production
+
+#### CSRF Token Workflow
+- Retrieve a single-use token via `GET /api/security/csrf-token` (requires authentication).
+- Include the token in the `x-csrf-token` header for every POST, PUT, PATCH, and DELETE request.
+- Tokens expire after 15 minutes and are invalidated after first use.
+
+#### Malware Scanning
+- Controlled through the `ENABLE_MALWARE_SCAN` environment variable (enabled by default).
+- Uploaded files are scanned before leaving the temporary store; suspicious uploads are rejected and logged for auditing.
 
 ## Contributing
 

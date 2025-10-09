@@ -5,6 +5,8 @@ import { prisma } from '../app';
 import { FileService } from '../services/fileService';
 import { UploadService } from '../services/uploadService';
 import { websocketService } from '../services/websocketService';
+import malwareScanner from '../services/malwareScanner';
+import auditService from '../services/auditService';
 import logger from '../utils/logger';
 import Joi from 'joi';
 import { AuthenticatedRequest } from '../middleware/auth';
@@ -193,6 +195,51 @@ export const uploadChunk = async (req: AuthenticatedRequest, res: Response) => {
     if (result.uploadComplete) {
       // Upload is complete, now transfer to FTP
       const uploadData = await uploadService.completeUpload(uploadId);
+
+      // Perform malware scanning before transferring to FTP
+      const scanResult = await malwareScanner.scanFile(
+        uploadData.tempFilePath,
+        uploadData.originalFilename
+      );
+
+      if (!scanResult.clean) {
+        logger.warn('Upload blocked by malware scan', {
+          uploadId,
+          userId,
+          signature: scanResult.signature,
+          details: scanResult.details,
+        });
+
+        // Clean up the upload session and temporary file
+        await uploadService.cancelUpload(uploadId);
+
+        await auditService.recordEvent({
+          action: 'UPLOAD_BLOCKED_MALWARE',
+          actorId: req.user?.id,
+          actorEmail: req.user?.email,
+          entityType: 'FILE_UPLOAD',
+          entityId: uploadId,
+          metadata: {
+            filename: uploadData.originalFilename,
+            signature: scanResult.signature,
+            details: scanResult.details,
+          },
+          ipAddress: req.ip,
+        });
+
+        websocketService.broadcastUploadError(
+          userId,
+          uploadId,
+          'File failed security scan'
+        );
+
+        res.status(400).json({
+          success: false,
+          error: 'File failed security scan',
+          details: scanResult.details || 'Potential malware detected in uploaded file.',
+        });
+        return;
+      }
       
       // Broadcast completion status
       websocketService.broadcastUploadProgress(userId, uploadId, {
@@ -222,6 +269,20 @@ export const uploadChunk = async (req: AuthenticatedRequest, res: Response) => {
           uploadComplete: true,
           fileId,
           message: 'File uploaded and transferred to FTP successfully',
+        });
+
+        await auditService.recordEvent({
+          action: 'FILE_UPLOAD_SUCCESS',
+          actorId: req.user?.id,
+          actorEmail: req.user?.email,
+          entityType: 'FILE',
+          entityId: fileId,
+          metadata: {
+            channelId: uploadData.channelId,
+            filename: uploadData.originalFilename,
+            size: uploadData.size,
+          },
+          ipAddress: req.ip,
         });
       } catch (ftpError) {
         logger.error('Error transferring file to FTP:', ftpError);
@@ -428,6 +489,15 @@ export const deleteFile = async (req: AuthenticatedRequest, res: Response) => {
     await fileService.deleteFile(fileId, userId);
 
     logger.info(`File deleted: ${fileId} by user ${userId}`);
+
+    await auditService.recordEvent({
+      action: 'FILE_DELETE',
+      actorId: userId,
+      actorEmail: req.user?.email,
+      entityType: 'FILE',
+      entityId: fileId,
+      ipAddress: req.ip,
+    });
 
     res.json({
       success: true,

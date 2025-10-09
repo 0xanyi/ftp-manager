@@ -25,6 +25,7 @@ model User {
   createdGuestLinks GuestUploadLink[] @relation("CreatedGuestLinks")
   userChannels     UserChannel[]    @relation("UserChannels")
   assignedChannels UserChannel[]    @relation("AssignedChannels")
+  auditLogs        AuditLog[]       @relation("UserAuditLogs")
 
   @@map("users")
 }
@@ -106,6 +107,25 @@ model UserChannel {
 
   @@unique([userId, channelId])
   @@map("user_channels")
+}
+
+model AuditLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
+  actorEmail  String?  @map("actor_email") @db.VarChar(255)
+  action      String   @db.VarChar(100)
+  entityType  String?  @map("entity_type") @db.VarChar(50)
+  entityId    String?  @map("entity_id") @db.VarChar(100)
+  metadata    Json?    @db.JsonB
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  actor User? @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 enum Role {

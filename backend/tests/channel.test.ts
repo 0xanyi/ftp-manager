@@ -2,6 +2,14 @@ import request from 'supertest';
 import { app, prisma } from '../src/app';
 import { generateTestToken, setupTestDb, cleanupTestDb } from './helpers';
 
+const getCsrfToken = async () => {
+  const response = await request(app)
+    .get('/api/security/csrf-token')
+    .expect(200);
+
+  return String(response.body.data.token);
+};
+
 describe('Channel Management', () => {
   let adminToken: string;
   let userToken: string;
@@ -44,9 +52,12 @@ describe('Channel Management', () => {
         description: 'Test channel description',
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .send(channelData)
         .expect(201);
 
@@ -62,8 +73,11 @@ describe('Channel Management', () => {
         name: 'Unauthorized Channel',
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels')
+        .set('x-csrf-token', csrfToken)
         .send(channelData)
         .expect(401);
 
@@ -76,9 +90,12 @@ describe('Channel Management', () => {
         name: 'User Channel',
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels')
         .set('Authorization', `Bearer ${userToken}`)
+        .set('x-csrf-token', csrfToken)
         .send(channelData)
         .expect(403);
 
@@ -91,9 +108,12 @@ describe('Channel Management', () => {
         name: '', // Empty name
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .send(channelData)
         .expect(400);
 
@@ -106,9 +126,12 @@ describe('Channel Management', () => {
         name: 'Test Channel', // Same name as first test
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .send(channelData)
         .expect(400);
 
@@ -158,6 +181,7 @@ describe('Channel Management', () => {
       await request(app)
         .post('/api/channels/assign')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', await getCsrfToken())
         .send({
           userId: testUserId,
           channelId: testChannelId,
@@ -227,9 +251,12 @@ describe('Channel Management', () => {
         description: 'Updated description',
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .put(`/api/channels/${testChannelId}`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .send(updateData)
         .expect(200);
 
@@ -244,9 +271,12 @@ describe('Channel Management', () => {
         name: 'Unauthorized Update',
       };
 
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .put(`/api/channels/${testChannelId}`)
         .set('Authorization', `Bearer ${userToken}`)
+        .set('x-csrf-token', csrfToken)
         .send(updateData)
         .expect(403);
 
@@ -271,9 +301,12 @@ describe('Channel Management', () => {
     });
 
     it('should assign user to channel as admin', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels/assign')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           userId: secondUserId,
           channelId: testChannelId,
@@ -286,9 +319,12 @@ describe('Channel Management', () => {
     });
 
     it('should fail to assign user to channel as regular user', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels/assign')
         .set('Authorization', `Bearer ${userToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           userId: secondUserId,
           channelId: testChannelId,
@@ -333,9 +369,12 @@ describe('Channel Management', () => {
     });
 
     it('should remove user from channel as admin', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .post('/api/channels/remove')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .send({
           userId: secondUserId,
           channelId: testChannelId,
@@ -363,9 +402,12 @@ describe('Channel Management', () => {
     });
 
     it('should delete channel as admin', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .delete(`/api/channels/${channelToDeleteId}`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .set('x-csrf-token', csrfToken)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -379,9 +421,12 @@ describe('Channel Management', () => {
     });
 
     it('should fail to delete channel as regular user', async () => {
+      const csrfToken = await getCsrfToken();
+
       const response = await request(app)
         .delete(`/api/channels/${testChannelId}`)
         .set('Authorization', `Bearer ${userToken}`)
+        .set('x-csrf-token', csrfToken)
         .expect(403);
 
       expect(response.body.success).toBe(false);
