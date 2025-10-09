@@ -32,6 +32,10 @@ export interface File {
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  uploader?: {
+    id: string;
+    email: string;
+  };
 }
 
 export interface GuestUploadLink {
@@ -119,6 +123,7 @@ export interface UploadProgress {
   maxRetries: number;
   startTime: string;
   estimatedTimeRemaining?: number;
+  speed?: number;
 }
 
 export interface UploadQueue {

@@ -78,8 +78,8 @@ const UserList: React.FC<UserListProps> = ({
         page: pagination.page,
         limit: pagination.limit,
         search: searchQuery || undefined,
-        role: roleFilter || undefined,
-        sortBy: sortBy as any,
+        role: roleFilter ? (roleFilter as 'ADMIN' | 'CHANNEL_USER') : undefined,
+        sortBy: sortBy as 'email' | 'createdAt' | 'lastLoginAt',
         sortOrder,
         ...params
       };
@@ -125,7 +125,7 @@ const UserList: React.FC<UserListProps> = ({
     } else {
       setSortBy(field);
       setSortOrder('desc');
-      fetchUsers({ sortBy: field, sortOrder: 'desc' });
+      fetchUsers({ sortBy: field as 'email' | 'createdAt' | 'lastLoginAt', sortOrder: 'desc' });
     }
   };
 

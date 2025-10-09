@@ -230,6 +230,7 @@ const VirtualFileList: React.FC<VirtualFileListProps> = ({
               <List
                 ref={ref}
                 height={384} // 24rem
+                width="100%"
                 itemCount={itemCount}
                 itemSize={80} // Height of each file item
                 onItemsRendered={onItemsRendered}

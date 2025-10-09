@@ -3,13 +3,13 @@ import { adminService } from '../../services/adminService';
 import { ApiResponse } from '../../types';
 import Button from '../Button';
 import {
-  BarChart3,
-  TrendingUp,
+  BarChart3 as _BarChart3,
+  TrendingUp as _TrendingUp,
   Users,
   FolderOpen,
   HardDrive,
   Clock,
-  Calendar,
+  Calendar as _Calendar,
   Activity,
   FileText,
   ArrowUp,
@@ -222,9 +222,10 @@ const AnalyticsDashboard: React.FC = () => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  // Utility function for potential future use
+  // const formatDate = (dateString: string): string => {
+  //   return new Date(dateString).toLocaleDateString();
+  // };
 
   const renderStorageBar = (used: number, total: number) => {
     const percentage = total > 0 ? (used / total) * 100 : 0;
@@ -419,7 +420,7 @@ const AnalyticsDashboard: React.FC = () => {
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-4">Most Active Users</h4>
             <div className="space-y-3">
-              {data.userActivity.topUsers.slice(0, 5).map((user, index) => (
+              {data.userActivity.topUsers.slice(0, 5).map((user) => (
                 <div key={user.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
@@ -450,7 +451,7 @@ const AnalyticsDashboard: React.FC = () => {
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-4">Most Active Channels</h4>
             <div className="space-y-3">
-              {data.channelActivity.topChannels.slice(0, 5).map((channel, index) => (
+              {data.channelActivity.topChannels.slice(0, 5).map((channel) => (
                 <div key={channel.channelId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{channel.name}</p>

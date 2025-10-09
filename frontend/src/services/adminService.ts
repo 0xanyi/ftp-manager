@@ -303,6 +303,134 @@ class AdminService {
 
     return response.json();
   }
+
+  /**
+   * Get list of channels
+   */
+  async getChannels(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<ApiResponse<any>> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
+    if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/channels?${searchParams.toString()}`,
+      {
+        headers: this.getAuthHeaders()
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch channels: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Delete channel
+   */
+  async deleteChannel(channelId: string): Promise<ApiResponse<any>> {
+    const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete channel: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Create channel
+   */
+  async createChannel(data: {
+    name: string;
+    slug: string;
+    description?: string;
+    ftpPath: string;
+  }): Promise<ApiResponse<any>> {
+    const response = await fetch(`${API_BASE_URL}/api/channels`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create channel: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update channel
+   */
+  async updateChannel(channelId: string, data: {
+    name?: string;
+    slug?: string;
+    description?: string;
+    ftpPath?: string;
+    isActive?: boolean;
+  }): Promise<ApiResponse<any>> {
+    const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update channel: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get channel users
+   */
+  async getChannelUsers(channelId: string): Promise<ApiResponse<any>> {
+    const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}/users`, {
+      headers: this.getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch channel users: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Update channel users
+   */
+  async updateChannelUsers(channelId: string, userIds: string[]): Promise<ApiResponse<any>> {
+    const response = await fetch(`${API_BASE_URL}/api/channels/${channelId}/users`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ userIds })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update channel users: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
 }
 
 export const adminService = new AdminService();
+export type { UserListParams };

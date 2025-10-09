@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../../services/adminService';
 import { ApiResponse } from '../../types';
 import Button from '../Button';
 import {
@@ -136,7 +135,7 @@ const FileAdministration: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Modal states
-  const [previewFile, setPreviewFile] = useState<AdminFile | null>(null);
+  const [_previewFile, setPreviewFile] = useState<AdminFile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {

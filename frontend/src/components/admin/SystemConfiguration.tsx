@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../../services/adminService';
+import { adminService as _adminService } from '../../services/adminService';
 import { ApiResponse } from '../../types';
 import Button from '../Button';
 import {
-  Settings,
+  Settings as _Settings,
   Database,
   Shield,
   Mail,
   HardDrive,
-  Users,
+  Users as _Users,
   FileText,
   Globe,
-  Bell,
-  Key,
+  Bell as _Bell,
+  Key as _Key,
   RefreshCw,
   Save,
   AlertTriangle,
   CheckCircle,
   Info,
-  Zap,
-  Lock,
+  Zap as _Zap,
+  Lock as _Lock,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -330,13 +330,14 @@ const SystemConfiguration: React.FC = () => {
     }));
   };
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-  };
+  // Utility function for potential future use
+  // const formatBytes = (bytes: number): string => {
+  //   if (bytes === 0) return '0 B';
+  //   const k = 1024;
+  //   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  //   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  //   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  // };
 
   if (loading) {
     return (

@@ -124,8 +124,10 @@ const ChannelForm: React.FC<ChannelFormProps> = ({
         });
       } else {
         // Create new channel
+        const slug = formData.name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
         response = await adminService.createChannel({
           name: formData.name.trim(),
+          slug,
           description: formData.description.trim() || undefined,
           ftpPath: ftpPath.trim()
         });
