@@ -530,7 +530,7 @@ export const updateChannelUsers = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const currentUserIds = currentAssignmentsResult.data?.users.map((user: any) => user.id) || [];
+    const currentUserIds = currentAssignmentsResult.data?.assignedUsers.map((user: any) => user.id) || [];
 
     // Calculate additions and removals
     const toAdd = userIds.filter((id: string) => !currentUserIds.includes(id));
@@ -553,7 +553,7 @@ export const updateChannelUsers = async (req: Request, res: Response): Promise<v
       success: true,
       data: {
         message: 'User assignments updated successfully',
-        assignedUsers: updatedAssignments.data?.users || []
+        assignedUsers: updatedAssignments.data?.assignedUsers || []
       }
     };
 
