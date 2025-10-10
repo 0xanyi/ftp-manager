@@ -4,6 +4,11 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { createClient } from 'redis';
+import {
+  parseAllowedOrigins,
+  isOriginAllowed,
+  buildConnectSrcDirectives,
+} from './utils/cors';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -35,14 +40,37 @@ export const redis = createClient({
 });
 
 // Create Express app
-const app = express();
+export const app = express();
+
+const allowedOrigins = parseAllowedOrigins(
+  process.env.CORS_ALLOWED_ORIGINS || process.env.CORS_ORIGIN,
+);
+const allowAllOrigins = allowedOrigins.includes('*');
+const connectSrcDirectives = buildConnectSrcDirectives(
+  allowedOrigins,
+  process.env.CSP_ADDITIONAL_CONNECT_SRC,
+);
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      'connect-src': connectSrcDirectives,
+    },
+  },
+}));
 
 // CORS middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin(origin, callback) {
+    if (!origin || allowAllOrigins || isOriginAllowed(origin, allowedOrigins)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
@@ -82,5 +110,7 @@ app.use('/api/performance', performanceRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+export { PrismaClient };
 
 export default app;
