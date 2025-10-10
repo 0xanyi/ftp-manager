@@ -31,6 +31,7 @@ export const prisma = new PrismaClient({
 // Initialize Redis client
 export const redis = createClient({
   url: process.env.REDIS_URL,
+  password: process.env.REDIS_PASSWORD || undefined,
 });
 
 // Create Express app
