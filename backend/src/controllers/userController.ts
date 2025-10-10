@@ -6,6 +6,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { ApiResponse } from '../types';
 import { registerSchema, userUpdateSchema } from '../utils/validation';
 import auditService from '../services/auditService';
+import CacheService from '../services/cacheService';
 
 /**
  * Get list of users with pagination and filtering
@@ -532,6 +533,9 @@ export const updateUserChannels = async (req: AuthenticatedRequest, res: Respons
         });
       }
     });
+
+    // Invalidate user's channel cache
+    await CacheService.invalidateUserCaches(id);
 
     // Get updated assignments
     const updatedAssignments = await prisma.userChannel.findMany({
