@@ -142,19 +142,23 @@ Verify all services are running:
 
 ## Step 7: Post-Deployment Configuration
 
-### 7.1 Run Database Migrations
-Access the backend container and run migrations:
+### 7.1 Database Migrations (Automatic)
+Database migrations now run automatically during deployment. The backend container will:
+1. Run `npx prisma migrate deploy` on startup
+2. Apply any pending migrations safely
+3. Start the application server
 
-```bash
-# Via Coolify terminal or SSH to server
-docker exec -it toovydrop-backend sh
-npm run prisma:migrate
-```
+> **Note**: If you need to run migrations manually, you can still access the backend container:
+> ```bash
+> # Via Coolify terminal or SSH to server
+> docker exec -it toovydrop-backend sh
+> npx prisma migrate deploy
+> ```
 
 ### 7.2 Create Admin User
 ```bash
 # In backend container
-npm run create-admin
+node dist/scripts/createAdmin.js
 ```
 
 ### 7.3 Verify Application
