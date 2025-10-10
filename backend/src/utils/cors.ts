@@ -92,3 +92,32 @@ export function isOriginAllowed(
 
   return false;
 }
+
+export function buildConnectSrcDirectives(
+  allowedOrigins: string[],
+  additionalRaw?: string,
+): string[] {
+  const directives = new Set<string>();
+
+  directives.add("'self'");
+  directives.add('https:');
+  directives.add('http:');
+  directives.add('wss:');
+  directives.add('ws:');
+
+  for (let index = 0; index < allowedOrigins.length; index += 1) {
+    directives.add(allowedOrigins[index]);
+  }
+
+  const additional = parseAllowedOrigins(additionalRaw, []);
+  for (let index = 0; index < additional.length; index += 1) {
+    directives.add(additional[index]);
+  }
+
+  const result: string[] = [];
+  for (const value of directives) {
+    result.push(value);
+  }
+
+  return result;
+}
