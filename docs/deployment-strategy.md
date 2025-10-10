@@ -375,7 +375,8 @@ LOG_MAX_FILES=5
 # Security
 BCRYPT_ROUNDS=12
 SESSION_TIMEOUT=86400000  # 24 hours
-CORS_ORIGIN=https://yourdomain.com
+CORS_ALLOWED_ORIGINS=https://yourdomain.com
+CSP_ADDITIONAL_CONNECT_SRC=https://api.yourdomain.com,wss://api.yourdomain.com
 TRUST_PROXY=true
 
 # Monitoring
