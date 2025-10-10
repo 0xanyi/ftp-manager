@@ -32,7 +32,8 @@ export class UploadService {
   }
 
   private initializeWebSocket() {
-    const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+    const wsUrl = import.meta.env.VITE_WS_URL || 
+      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

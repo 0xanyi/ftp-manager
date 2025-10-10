@@ -130,6 +130,8 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
 };
 
 const SystemConfiguration: React.FC = () => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  
   // Helper function to get auth token
   const getAuthToken = (): string | null => {
     const authTokens = localStorage.getItem('authTokens');
@@ -163,7 +165,7 @@ const SystemConfiguration: React.FC = () => {
       setError(null);
 
       // Note: This endpoint would need to be implemented in the backend
-      const response: ApiResponse<SystemConfig> = await fetch('/api/admin/config', {
+      const response: ApiResponse<SystemConfig> = await fetch(`${apiUrl}/api/admin/config`, {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`
         }
@@ -243,7 +245,7 @@ const SystemConfiguration: React.FC = () => {
       setSuccess(null);
 
       // Note: This endpoint would need to be implemented in the backend
-      const response = await fetch('/api/admin/config', {
+      const response = await fetch(`${apiUrl}/api/admin/config`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -273,7 +275,7 @@ const SystemConfiguration: React.FC = () => {
       setError(null);
 
       // Note: This endpoint would need to be implemented in the backend
-      const response = await fetch('/api/admin/config/test-email', {
+      const response = await fetch(`${apiUrl}/api/admin/config/test-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

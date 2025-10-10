@@ -7,8 +7,9 @@ class ApiService {
   private csrfTokenExpiry: number = 0;
 
   constructor() {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     this.client = axios.create({
-      baseURL: '/api',
+      baseURL: `${apiUrl}/api`,
       timeout: 30000,
     });
 
@@ -56,7 +57,8 @@ class ApiService {
 
     // Fetch a new CSRF token
     try {
-      const response = await axios.get('/api/security/csrf-token', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const response = await axios.get(`${apiUrl}/api/security/csrf-token`, {
         headers: {
           Authorization: this.client.defaults.headers.common['Authorization']
         }

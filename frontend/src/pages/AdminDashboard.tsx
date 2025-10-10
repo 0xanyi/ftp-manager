@@ -119,11 +119,13 @@ const AdminDashboard: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      
       const [statsResponse, healthResponse] = await Promise.all([
-        fetch('/api/admin/dashboard/stats', {
+        fetch(`${apiUrl}/api/admin/dashboard/stats`, {
           headers
         }),
-        fetch('/api/admin/system/health', {
+        fetch(`${apiUrl}/api/admin/system/health`, {
           headers
         })
       ]);

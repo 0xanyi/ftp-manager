@@ -93,6 +93,8 @@ interface SortConfig {
 }
 
 const FileAdministration: React.FC = () => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  
   // Helper function to get auth token
   const getAuthToken = (): string | null => {
     const authTokens = localStorage.getItem('authTokens');
@@ -169,7 +171,7 @@ const FileAdministration: React.FC = () => {
 
       // Note: This endpoint would need to be implemented in the backend
       const response: ApiResponse<FileListResponse> = await fetch(
-        `/api/admin/files?${params.toString()}`,
+        `${apiUrl}/api/admin/files?${params.toString()}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -232,7 +234,7 @@ const FileAdministration: React.FC = () => {
       setIsDeleting(true);
 
       // Note: This endpoint would need to be implemented
-      const response = await fetch('/api/admin/files/bulk-delete', {
+      const response = await fetch(`${apiUrl}/api/admin/files/bulk-delete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -261,7 +263,7 @@ const FileAdministration: React.FC = () => {
 
     try {
       // Note: This endpoint would need to be implemented
-      const response = await fetch(`/api/admin/files/${fileId}`, {
+      const response = await fetch(`${apiUrl}/api/admin/files/${fileId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`
@@ -280,7 +282,7 @@ const FileAdministration: React.FC = () => {
 
   const handleDownloadFile = async (file: AdminFile) => {
     try {
-      const response = await fetch(`/api/files/${file.id}/download`, {
+      const response = await fetch(`${apiUrl}/api/files/${file.id}/download`, {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`
         }

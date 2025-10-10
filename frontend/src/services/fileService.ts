@@ -130,13 +130,14 @@ export class FileService {
   }
 
   generateFileUrl(fileId: string, download: boolean = false): string {
-    const baseUrl = '/api';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const endpoint = download ? 'download' : 'view';
-    return `${baseUrl}/files/${fileId}/${endpoint}`;
+    return `${apiUrl}/api/files/${fileId}/${endpoint}`;
   }
 
   generateThumbnailUrl(fileId: string): string {
-    return `/api/files/${fileId}/thumbnail`;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    return `${apiUrl}/api/files/${fileId}/thumbnail`;
   }
 
   formatFileSize(bytes: number): string {
