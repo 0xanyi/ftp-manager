@@ -54,3 +54,41 @@ export function parseAllowedOrigins(
 
   return result;
 }
+
+export function isOriginAllowed(
+  origin: string | undefined,
+  allowedOrigins: string[],
+): boolean {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowedOrigins.length === 0) {
+    return false;
+  }
+
+  for (let index = 0; index < allowedOrigins.length; index += 1) {
+    if (allowedOrigins[index] === '*') {
+      return true;
+    }
+  }
+
+  let candidate = origin.trim();
+  if (!candidate) {
+    return false;
+  }
+
+  while (candidate.endsWith('/')) {
+    candidate = candidate.slice(0, -1);
+  }
+
+  const normalizedCandidate = candidate.toLowerCase();
+
+  for (let index = 0; index < allowedOrigins.length; index += 1) {
+    if (allowedOrigins[index] === normalizedCandidate) {
+      return true;
+    }
+  }
+
+  return false;
+}
