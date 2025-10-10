@@ -375,5 +375,33 @@ Default admin credentials (after running create-admin):
 
 **This document serves as the complete development guide for all agents working on the ToovyDrop project. All guidelines are mandatory unless explicitly marked as optional.**
 
-**Last Updated**: October 9 2025 - Security Hardening & CSRF Enforcement
+**Last Updated**: October 10 2025 - Admin Channel Access & Cache Invalidation Fixes
 **Next Milestone**: Phase VII - Production Deployment & Monitoring
+
+## Recent Bug Fixes (October 10, 2025)
+
+### Admin Channel Access & State Persistence ✅ FIXED
+**Issue**: Admin users couldn't see all channels and user channel assignments weren't persisting after refresh.
+
+**Root Causes**:
+1. `/auth/me` endpoint only returned explicitly assigned channels for all users (including admins)
+2. Cache wasn't being invalidated after user-channel assignment updates
+3. Authentication middleware didn't grant admins access to all channels
+
+**Solutions Implemented**:
+- Modified `/auth/me` endpoint to return all active channels for admin users
+- Updated `authenticate` middleware to attach all active channels to admin requests
+- Added cache invalidation in `updateUserChannels` controller
+- Added cache invalidation in `updateChannelUsers` controller
+
+**Files Modified**:
+- `backend/src/routes/auth.ts` - Admin channel access in /auth/me
+- `backend/src/middleware/auth.ts` - Admin channel access in middleware
+- `backend/src/controllers/userController.ts` - Cache invalidation
+- `backend/src/controllers/channelController.ts` - Cache invalidation
+
+**Impact**:
+- ✅ Admins now see all active channels automatically
+- ✅ Admins can upload to any channel without explicit assignment
+- ✅ User channel assignments update immediately on refresh
+- ✅ Cache properly invalidates on assignment changes
