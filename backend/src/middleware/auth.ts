@@ -40,22 +40,34 @@ export const authenticate = async (
       throw new AppError('Invalid token', 401, 'AUTHENTICATION_ERROR');
     }
     
-    // Get user's channels
-    const userChannels = await prisma.userChannel.findMany({
-      where: { userId: user.id },
-    });
+    let channelIds: string[];
     
-    // Get channel details
-    const channels = await prisma.channel.findMany({
-      where: {
-        id: {
-          in: userChannels.map(uc => uc.channelId),
+    // Admins have access to all active channels
+    if (user.role === 'ADMIN') {
+      const allChannels = await prisma.channel.findMany({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      channelIds = allChannels.map(c => c.id);
+    } else {
+      // Get user's assigned channels
+      const userChannels = await prisma.userChannel.findMany({
+        where: { userId: user.id },
+      });
+      
+      // Get channel details for active channels only
+      const channels = await prisma.channel.findMany({
+        where: {
+          id: {
+            in: userChannels.map(uc => uc.channelId),
+          },
+          isActive: true,
         },
-      },
-      select: { id: true, slug: true },
-    });
-    
-    const channelIds = channels.map(c => c.id);
+        select: { id: true, slug: true },
+      });
+      
+      channelIds = channels.map(c => c.id);
+    }
     
     // Attach user to request
     req.user = {
