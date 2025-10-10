@@ -213,20 +213,33 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response,
       throw new AppError('Authentication required', 401, 'AUTHENTICATION_ERROR');
     }
     
-    // Get user's channels
-    const userChannels = await prisma.userChannel.findMany({
-      where: { userId: req.user.id },
-    });
+    let channels;
     
-    // Get channel details
-    const channels = await prisma.channel.findMany({
-      where: {
-        id: {
-          in: userChannels.map(uc => uc.channelId),
+    // Admins get all active channels, regular users get only assigned channels
+    if (req.user.role === 'ADMIN') {
+      channels = await prisma.channel.findMany({
+        where: { isActive: true },
+        select: { id: true, slug: true, name: true },
+        orderBy: { name: 'asc' },
+      });
+    } else {
+      // Get user's assigned channels
+      const userChannels = await prisma.userChannel.findMany({
+        where: { userId: req.user.id },
+      });
+      
+      // Get channel details
+      channels = await prisma.channel.findMany({
+        where: {
+          id: {
+            in: userChannels.map(uc => uc.channelId),
+          },
+          isActive: true,
         },
-      },
-      select: { id: true, slug: true, name: true },
-    });
+        select: { id: true, slug: true, name: true },
+        orderBy: { name: 'asc' },
+      });
+    }
     
     // Prepare user data
     const userData = {
