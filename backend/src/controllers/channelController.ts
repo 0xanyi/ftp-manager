@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ChannelService } from '../services/channelService';
 import { prisma } from '../app';
 import { ApiResponse } from '../types';
+import CacheService from '../services/cacheService';
 
 // Initialize service after prisma is available
 let channelService: ChannelService;
@@ -545,6 +546,13 @@ export const updateChannelUsers = async (req: Request, res: Response): Promise<v
     for (const userId of toAdd) {
       await channelService.assignUserToChannel(userId, id, assignedBy);
     }
+
+    // Invalidate cache for all affected users and the channel
+    const allAffectedUsers = [...toRemove, ...toAdd];
+    await Promise.all([
+      ...allAffectedUsers.map(userId => CacheService.invalidateUserCaches(userId)),
+      CacheService.invalidateChannelCaches(id)
+    ]);
 
     // Get updated assignments
     const updatedAssignments = await getChannelService().getChannelUsers(id);
